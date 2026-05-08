@@ -1,0 +1,63 @@
+name: Keep Alive - RFD (Running Form Diagnosis)
+
+on:
+  schedule:
+    # 6時間ごと (UTC 0:00, 6:00, 12:00, 18:00 = JST 9:00, 15:00, 21:00, 3:00)
+    - cron: '0 */6 * * *'
+  # 手動実行（動作確認・緊急起動用）
+  workflow_dispatch:
+
+jobs:
+  wake-up:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install Playwright
+        run: |
+          npm init -y
+          npm install playwright
+          npx playwright install chromium --with-deps
+
+      - name: Wake up RFD App
+        run: |
+          cat > wake.js << 'EOF'
+          const { chromium } = require('playwright');
+          (async () => {
+            const browser = await chromium.launch();
+            const page = await browser.newPage();
+            const url = 'https://running-form-diagnosis.streamlit.app/';
+            console.log(`[${new Date().toISOString()}] Accessing ${url} ...`);
+            try {
+              // スリープ中は networkidle にならないため domcontentloaded を使用
+              // タイムアウトしても wake ボタン検知を続けるため catch で握りつぶす
+              await page.goto(url, { timeout: 30000, waitUntil: 'domcontentloaded' }).catch(() => {});
+              // SPA描画を待つ（スリープページはJSで描画される）
+              await page.waitForTimeout(8000);
+              // Streamlit のスリープページには "Yes, get this app back up!" ボタンがある
+              const wakeBtn = page.getByRole('button', { name: /get this app back up/i });
+              const isSleeping = await wakeBtn.isVisible({ timeout: 15000 }).catch(() => false);
+              if (isSleeping) {
+                console.log('STATUS: SLEEPING - Clicking wake-up button...');
+                await wakeBtn.click();
+                await page.waitForTimeout(90000);
+                console.log('Wake-up request sent. App should be starting.');
+                process.exitCode = 1; // GitHub にメール通知させる
+              } else {
+                console.log('STATUS: RUNNING - No action needed.');
+              }
+            } catch (e) {
+              console.log('ERROR:', e.message);
+            } finally {
+              await browser.close();
+            }
+          })();
+          EOF
+          node wake.js
