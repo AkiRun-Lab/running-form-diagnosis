@@ -6,7 +6,7 @@ import streamlit as st
 from datetime import datetime
 from google import genai
 
-from src.config import APP_NAME, APP_VERSION, SUPPORTED_VIDEO_TYPES, MAX_VIDEO_SIZE_MB
+from src.config import APP_NAME, APP_VERSION, SUPPORTED_VIDEO_TYPES, MAX_VIDEO_SIZE_MB, MAX_DIAGNOSES_PER_SESSION
 from src.screener import screen_video
 from src.analyzer import upload_video, analyze_form, cleanup_video
 from src.ui.components import render_header, render_result, render_footer
@@ -31,6 +31,12 @@ if not api_key:
 client = genai.Client(api_key=api_key)
 
 # =============================================
+# セッション状態の初期化
+# =============================================
+if "diagnosis_count" not in st.session_state:
+    st.session_state.diagnosis_count = 0
+
+# =============================================
 # UI
 # =============================================
 render_header()
@@ -53,10 +59,17 @@ context = st.text_area(
     height=140,
 )
 
+limit_reached = st.session_state.diagnosis_count >= MAX_DIAGNOSES_PER_SESSION
+if limit_reached:
+    st.warning(
+        f"1セッションあたりの診断回数上限（{MAX_DIAGNOSES_PER_SESSION}回）に達しました。"
+        "ページを再読み込みすると新しいセッションが始まります。"
+    )
+
 run_btn = st.button(
     "フォームを診断する",
     type="primary",
-    disabled=(uploaded_file is None),
+    disabled=(uploaded_file is None or limit_reached),
 )
 
 if run_btn and uploaded_file:
@@ -84,6 +97,7 @@ if run_btn and uploaded_file:
             result = analyze_form(client, video_file, context)
             status.update(label="診断完了", state="complete")
 
+        st.session_state.diagnosis_count += 1
         render_result(result)
 
         # MDダウンロードボタン

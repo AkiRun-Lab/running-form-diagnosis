@@ -34,6 +34,7 @@ GEMINI_THINKING_BUDGET = 8192
 # =============================================
 SUPPORTED_VIDEO_TYPES = ["mp4", "mov", "avi", "webm"]
 MAX_VIDEO_SIZE_MB = 200
+MAX_DIAGNOSES_PER_SESSION = 3
 
 # Files API ポーリング設定
 UPLOAD_POLL_INTERVAL_SEC = 2
