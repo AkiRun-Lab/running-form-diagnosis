@@ -10,12 +10,12 @@ from ..config import APP_NAME, APP_VERSION
 def render_header() -> None:
     """アプリヘッダーを表示"""
     st.markdown(
-        f'<h1 style="text-align:center; font-size:2.2rem;">ランニングフォーム診断</h1>',
+        f'<h1 style="text-align:center; font-size:2.2rem;">{APP_NAME}</h1>',
         unsafe_allow_html=True,
     )
     st.markdown(
-        '<p style="text-align:center; color:#aaa; font-size:0.9rem; margin-top:-0.5rem;">'
-        'Powered by Gemini｜AkiRun</p>',
+        f'<p style="text-align:center; color:#aaa; font-size:0.9rem; margin-top:-0.5rem;">'
+        f'v{APP_VERSION}　|　Powered by Gemini｜AkiRun</p>',
         unsafe_allow_html=True,
     )
     st.markdown(
