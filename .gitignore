@@ -1,0 +1,15 @@
+# Streamlit secrets（APIキーを含むため絶対にコミットしない）
+.streamlit/secrets.toml
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.env
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
