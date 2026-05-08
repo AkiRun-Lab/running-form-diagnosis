@@ -35,6 +35,27 @@ client = genai.Client(api_key=api_key)
 # =============================================
 if "diagnosis_count" not in st.session_state:
     st.session_state.diagnosis_count = 0
+if "is_admin" not in st.session_state:
+    st.session_state.is_admin = False
+
+# =============================================
+# サイドバー：管理者ログイン
+# =============================================
+with st.sidebar:
+    st.markdown("#### 管理者")
+    if st.session_state.is_admin:
+        st.success("管理者モード（回数制限なし）")
+        if st.button("ログアウト"):
+            st.session_state.is_admin = False
+            st.rerun()
+    else:
+        admin_pw = st.text_input("パスワード", type="password", label_visibility="collapsed")
+        if st.button("ログイン"):
+            if admin_pw == st.secrets.get("ADMIN_PASSWORD", ""):
+                st.session_state.is_admin = True
+                st.rerun()
+            else:
+                st.error("パスワードが違います")
 
 # =============================================
 # UI
@@ -59,7 +80,10 @@ context = st.text_area(
     height=140,
 )
 
-limit_reached = st.session_state.diagnosis_count >= MAX_DIAGNOSES_PER_SESSION
+limit_reached = (
+    st.session_state.diagnosis_count >= MAX_DIAGNOSES_PER_SESSION
+    and not st.session_state.is_admin
+)
 if limit_reached:
     st.warning(
         f"1セッションあたりの診断回数上限（{MAX_DIAGNOSES_PER_SESSION}回）に達しました。"
