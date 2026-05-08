@@ -8,6 +8,7 @@
 | バージョン | 1.0.0 |
 | フレームワーク | Streamlit |
 | ホスティング | Streamlit Community Cloud |
+| 本番URL | https://running-form-diagnosis.streamlit.app/ |
 | AIバックエンド | Google Gemini API（google-genai SDK） |
 | リポジトリ | https://github.com/AkiRun-Lab/running-form-diagnosis |
 

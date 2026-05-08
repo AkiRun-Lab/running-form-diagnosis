@@ -2,6 +2,8 @@
 
 ランニング動画をアップロードすると、Google Gemini AIがバイオメカニクスの観点からフォームを診断するStreamlitアプリです。
 
+**[アプリを使う → https://running-form-diagnosis.streamlit.app/](https://running-form-diagnosis.streamlit.app/)**
+
 **[AkiRun](https://akirun.net/)** が開発・運営しています。
 
 ---
