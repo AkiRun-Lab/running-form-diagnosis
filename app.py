@@ -134,7 +134,7 @@ if run_btn and uploaded_file:
         )
         st.download_button(
             label="診断結果をダウンロード（Markdown）",
-            data=md_content.encode("utf-8"),
+            data=md_content.encode("utf-8-sig"),
             file_name=f"running_form_diagnosis_{datetime.now().strftime('%Y%m%d')}.md",
             mime="text/markdown",
         )

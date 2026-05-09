@@ -7,7 +7,7 @@ Running Form Diagnosis - Configuration
 # アプリ情報
 # =============================================
 APP_NAME = "ランニングフォーム診断ツール"
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.1.1"
 
 # =============================================
 # Gemini API Configuration
