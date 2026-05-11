@@ -2,11 +2,13 @@
 Running Form Diagnosis - Main App
 ランニング動画をアップロードしてGeminiにフォーム診断させるStreamlitアプリ
 """
-import streamlit as st
 from datetime import datetime
-from google import genai
 
-from src.config import APP_NAME, APP_VERSION, SUPPORTED_VIDEO_TYPES, MAX_VIDEO_SIZE_MB, MAX_DIAGNOSES_PER_SESSION
+import streamlit as st
+from google import genai
+from streamlit_cookies_controller import CookieController
+
+from src.config import APP_NAME, APP_VERSION, SUPPORTED_VIDEO_TYPES, MAX_VIDEO_SIZE_MB, MAX_DIAGNOSES_PER_DAY
 from src.screener import screen_video
 from src.analyzer import upload_video, analyze_form, cleanup_video
 from src.ui.components import render_header, render_result, render_footer
@@ -21,6 +23,52 @@ st.set_page_config(
 )
 
 # =============================================
+# Cookie コントローラー
+# =============================================
+_cookie_controller = CookieController()
+
+
+def _load_cookie_counts(controller: CookieController) -> int:
+    """読み込み専用。書き込みは cookie_write_pending ブロックで行う。"""
+    today = datetime.today().strftime("%Y-%m-%d")
+    cookie_date = controller.get("rfd_date") or ""
+    if cookie_date != today:
+        return 0
+    return int(controller.get("rfd_diag_count") or "0")
+
+
+# =============================================
+# セッション状態の初期化
+# =============================================
+defaults = {
+    "diagnosis_count": 0,
+    "is_admin": False,
+    "counts_loaded": False,
+    "cookie_write_pending": False,
+    "_first_render_done": False,
+}
+for k, v in defaults.items():
+    if k not in st.session_state:
+        st.session_state[k] = v
+
+if not st.session_state.counts_loaded:
+    if st.session_state._first_render_done:
+        try:
+            count = _load_cookie_counts(_cookie_controller)
+            st.session_state.diagnosis_count = count
+            st.session_state.counts_loaded = True
+        except Exception:
+            pass
+    else:
+        st.session_state._first_render_done = True
+
+# rerun直前にset()すると書き込みが失われるため、次の描画サイクル先頭でまとめて書く
+if st.session_state.get("cookie_write_pending"):
+    _cookie_controller.set("rfd_date", datetime.today().strftime("%Y-%m-%d"))
+    _cookie_controller.set("rfd_diag_count", str(st.session_state.diagnosis_count))
+    st.session_state.cookie_write_pending = False
+
+# =============================================
 # API クライアント初期化
 # =============================================
 api_key = st.secrets.get("GEMINI_API_KEY", "")
@@ -29,14 +77,6 @@ if not api_key:
     st.stop()
 
 client = genai.Client(api_key=api_key)
-
-# =============================================
-# セッション状態の初期化
-# =============================================
-if "diagnosis_count" not in st.session_state:
-    st.session_state.diagnosis_count = 0
-if "is_admin" not in st.session_state:
-    st.session_state.is_admin = False
 
 # =============================================
 # サイドバー：管理者ログイン
@@ -81,13 +121,13 @@ context = st.text_area(
 )
 
 limit_reached = (
-    st.session_state.diagnosis_count >= MAX_DIAGNOSES_PER_SESSION
+    st.session_state.diagnosis_count >= MAX_DIAGNOSES_PER_DAY
     and not st.session_state.is_admin
 )
 if limit_reached:
     st.warning(
-        f"1セッションあたりの診断回数上限（{MAX_DIAGNOSES_PER_SESSION}回）に達しました。"
-        "ページを再読み込みすると新しいセッションが始まります。"
+        f"1日あたりの診断回数上限（{MAX_DIAGNOSES_PER_DAY}回）に達しました。"
+        "明日またお試しください。"
     )
 
 run_btn = st.button(
@@ -122,6 +162,7 @@ if run_btn and uploaded_file:
             status.update(label="診断完了", state="complete")
 
         st.session_state.diagnosis_count += 1
+        st.session_state.cookie_write_pending = True
         render_result(result)
 
         # MDダウンロードボタン
