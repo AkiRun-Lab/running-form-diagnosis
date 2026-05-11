@@ -10,7 +10,7 @@ from ..config import APP_NAME, APP_VERSION
 def render_header() -> None:
     """アプリヘッダーを表示"""
     st.markdown(
-        f'<h1 style="text-align:center; font-size:2.2rem;">{APP_NAME}</h1>',
+        f'<h1 style="text-align:center; font-size:clamp(1.4rem, 6vw, 2.2rem); white-space:nowrap;">{APP_NAME}</h1>',
         unsafe_allow_html=True,
     )
     st.markdown(

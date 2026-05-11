@@ -1,0 +1,213 @@
+<style>
+  .rfd-wrapper {
+    width: 100%;
+    overflow: hidden;
+    background-color: #0E1117;
+    margin: 0;
+    padding: 0;
+  }
+  .rfd-iframe {
+    width: calc(100% + 10px);
+    border: none !important;
+    display: block;
+    margin-left: -5px;
+    margin-top: -5px;
+    margin-bottom: 0;
+    clip-path: inset(5px 5px 0 5px);
+  }
+  @media (min-width: 768px) { .rfd-iframe { height: 1800px; } }
+  @media (max-width: 767px) { .rfd-iframe { height: 3000px; } }
+
+  /* iframeの下に表示するコンテンツ（ダークモード） */
+  .rfd-content {
+    background: #0E1117;
+    color: #FAFAFA;
+    padding: 40px 30px;
+    line-height: 1.8;
+    font-size: 16px;
+  }
+  .rfd-content h2 {
+    color: #FF4B4B;
+    font-size: 1.4em;
+    margin-top: 30px;
+    margin-bottom: 15px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #333;
+  }
+  .rfd-content h2:first-child {
+    margin-top: 0;
+  }
+  .rfd-content h3 {
+    color: #FAFAFA;
+    font-size: 1.1em;
+    margin-top: 20px;
+    margin-bottom: 10px;
+  }
+  .rfd-content ul {
+    padding-left: 20px;
+    margin: 15px 0;
+  }
+  .rfd-content li {
+    margin-bottom: 8px;
+    color: #FAFAFA;
+  }
+  .rfd-content li strong {
+    color: #FF4B4B;
+  }
+  .rfd-content p {
+    margin: 15px 0;
+    color: #FAFAFA;
+  }
+  .rfd-content a {
+    color: #FF4B4B;
+    text-decoration: none;
+  }
+  .rfd-content a:hover {
+    text-decoration: underline;
+  }
+  .rfd-content .note {
+    background: #1a1d24;
+    padding: 15px;
+    border-radius: 8px;
+    font-size: 0.9em;
+    color: #888;
+    margin-top: 30px;
+    border: 1px solid #333;
+  }
+  .rfd-content .steps {
+    counter-reset: step-counter;
+    list-style: none;
+    padding-left: 0;
+  }
+  .rfd-content .steps li {
+    counter-increment: step-counter;
+    padding-left: 2.5em;
+    position: relative;
+    margin-bottom: 12px;
+  }
+  .rfd-content .steps li::before {
+    content: counter(step-counter);
+    position: absolute;
+    left: 0;
+    top: 0;
+    background: #FF4B4B;
+    color: #fff;
+    width: 1.8em;
+    height: 1.8em;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85em;
+    font-weight: bold;
+  }
+  .rfd-content .faq dt {
+    color: #FF4B4B;
+    font-weight: bold;
+    margin-top: 18px;
+    margin-bottom: 6px;
+  }
+  .rfd-content .faq dd {
+    margin-left: 0;
+    color: #FAFAFA;
+  }
+</style>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "ランニングフォーム診断アプリ",
+  "operatingSystem": "Web",
+  "applicationCategory": "HealthApplication",
+  "description": "スマホで撮影したランニング動画をアップロードするだけで、Gemini AIがバイオメカニクス視点でフォームを無料診断。良い点・改善すべき点・具体的なドリルの3点を出力します。",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "JPY"
+  },
+  "author": {
+    "@type": "Person",
+    "name": "あきら",
+    "url": "https://akirun.net/profile/"
+  }
+}
+</script>
+<div class="rfd-wrapper">
+  <iframe
+    class="rfd-iframe"
+    src="https://running-form-diagnosis.streamlit.app/?embed=true"
+    loading="lazy"
+    title="ランニングフォーム診断アプリ"
+  ></iframe>
+</div>
+<div class="rfd-content">
+  <h2>フォームに課題があるのにどこを直せばいいかわからない</h2>
+  <p>
+    「膝が痛い」「後半に失速する」「フォームが崩れている気がする」——そう感じていても、自分のランニングフォームを客観的に見る機会はほとんどありません。コーチに診てもらうにはスクールや店舗に予約が必要で、費用も時間もかかります。
+  </p>
+  <p>
+    ランニングフォーム診断アプリは、スマホで撮影した動画を1本アップロードするだけで、Gemini AIがバイオメカニクスの観点からフォームを無料で診断します。接地・骨盤・腕振りの3つを軸に、良い点と改善ポイントを具体的に教えてくれます。
+  </p>
+
+  <h2>AIがバイオメカニクス視点で診断する3つの出力</h2>
+  <p>診断結果は、以下の3セクションで出力されます。</p>
+  <ul>
+    <li><strong>全体評価（良い点）</strong>：動きの連動性や、すでに効率的に使えている動作を具体的に明示</li>
+    <li><strong>改善すべき点</strong>：エネルギーロスの要因を力学的根拠とともに解説。「なぜ遅くなるか」が理解できる</li>
+    <li><strong>具体的なドリル・トレーニング提案</strong>：優先度の高い順に3〜5個。目的・やり方つきで、診断の翌日から実践できる</li>
+  </ul>
+  <p>
+    診断の観点は、接地（フットストライク）・骨盤・体幹・腕振り・股関節伸展・疲労による代償動作の6項目。
+    動画の時間経過に伴うフォームの崩れも分析します。
+  </p>
+
+  <h2>店舗診断との違い｜無料・自宅・スマホ動画でできる理由</h2>
+  <p>
+    ミズノ・ナイキ・アシックスなどの「ランニングフォーム診断」は、店舗への来店予約と費用が必要です。
+    このアプリは以下の点で異なります。
+  </p>
+  <ul>
+    <li><strong>無料</strong>：1セッション3回まで無料で診断できます</li>
+    <li><strong>自宅で完結</strong>：店舗への移動・予約は不要。スマホとアプリだけで診断が完結します</li>
+    <li><strong>24時間いつでも</strong>：練習直後に撮影してその場で診断できます</li>
+    <li><strong>複数シーンに対応</strong>：ジョグ・インターバル・レース動画・フォームドリルなど、撮影シーンを指定して診断精度を高められます</li>
+  </ul>
+
+  <h2>使い方は3ステップ｜撮影→アップロード→診断結果を受け取る</h2>
+  <ol class="steps">
+    <li><strong>動画を撮影する</strong>：横（側面）または後ろ（背面）から20〜60秒を目安に撮影。MP4・MOV・AVI・WEBMに対応（最大200MB）</li>
+    <li><strong>動画をアップロードして状況を入力する</strong>：「1000m×5インターバルの5本目後半、ペース3分30秒」のように練習内容・気になる点を入力するとより精度が上がります</li>
+    <li><strong>診断ボタンを押して結果を受け取る</strong>：30秒〜2分で診断結果が表示されます。Markdownファイルとしてダウンロードも可能です</li>
+  </ol>
+
+  <h2>こんなランナーにおすすめ</h2>
+  <ul>
+    <li>フォームを改善して自己ベストを更新したい市民ランナー</li>
+    <li>膝・股関節・腸脛靭帯など、フォームが原因の故障を繰り返している方</li>
+    <li>マラソン後半の失速・フォーム崩れを改善したい方</li>
+    <li>独学で練習しているため客観的な評価を得る機会がない方</li>
+    <li>スクールや専属コーチをつけるほどではないが、科学的な根拠でフォームを見直したい方</li>
+  </ul>
+
+  <h2>よくある質問</h2>
+  <dl class="faq">
+    <dt>Q. 何回まで無料で使えますか？</dt>
+    <dd>1セッション（ブラウザを開いている間）につき3回まで無料で診断できます。ブラウザを閉じて再度開くと新しいセッションが始まります。</dd>
+
+    <dt>Q. アップロードした動画はどこかに保存されますか？</dt>
+    <dd>診断が完了すると、動画はGemini Files APIから自動的に削除されます。サーバーや第三者に保存・共有されることはありません。</dd>
+
+    <dt>Q. スマホで撮影した動画で使えますか？</dt>
+    <dd>はい。iPhoneのMOV・AndroidのMP4など、スマホで撮影した動画に対応しています。ファイルサイズは最大200MBです。</dd>
+
+    <dt>Q. どんな角度で撮影すればいいですか？</dt>
+    <dd>横（側面）からの撮影が最も多くの情報を取得できます。接地のようすや体幹の前傾・腕振りが確認しやすいためです。後ろ（背面）からの撮影も有効で、骨盤の左右ブレや腕振りの非対称を確認できます。</dd>
+
+    <dt>Q. レースや複数選手の動画にも使えますか？</dt>
+    <dd>はい。コンテキスト欄に「6コースの黄色いランシャツの選手のフォームを診断してください」のように指定することで、レース動画や複数選手の動画にも対応しています。</dd>
+  </dl>
+
+  <div class="note">
+    本アプリはAI（Gemini）による診断であり、医療・リハビリの専門家による診察の代替ではありません。痛みや故障がある場合は医療機関にご相談ください。
+  </div>
+</div>
