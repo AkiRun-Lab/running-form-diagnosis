@@ -46,6 +46,8 @@ defaults = {
     "counts_loaded": False,
     "cookie_write_pending": False,
     "_first_render_done": False,
+    "last_result": None,
+    "last_context": "",
 }
 for k, v in defaults.items():
     if k not in st.session_state:
@@ -136,6 +138,8 @@ run_btn = st.button(
     disabled=(uploaded_file is None or limit_reached),
 )
 
+_should_rerun = False
+
 if run_btn and uploaded_file:
     video_bytes = uploaded_file.read()
     video_file = None
@@ -161,24 +165,11 @@ if run_btn and uploaded_file:
             result = analyze_form(client, video_file, context)
             status.update(label="診断完了", state="complete")
 
+        st.session_state.last_result = result
+        st.session_state.last_context = context.strip()
         st.session_state.diagnosis_count += 1
         st.session_state.cookie_write_pending = True
-        render_result(result)
-
-        # MDダウンロードボタン
-        today = datetime.now().strftime("%Y年%m月%d日")
-        context_line = f"\n> コンテキスト：{context.strip()}\n" if context.strip() else ""
-        md_content = (
-            f"# ランニングフォーム診断レポート\n\n"
-            f"診断日：{today}{context_line}\n\n---\n\n"
-            f"{result}"
-        )
-        st.download_button(
-            label="診断結果をダウンロード（Markdown）",
-            data=md_content.encode("utf-8-sig"),
-            file_name=f"running_form_diagnosis_{datetime.now().strftime('%Y%m%d')}.md",
-            mime="text/markdown",
-        )
+        _should_rerun = True
 
     except RuntimeError as e:
         err_msg = str(e)
@@ -192,5 +183,28 @@ if run_btn and uploaded_file:
     finally:
         if video_file:
             cleanup_video(client, video_file)
+
+# cleanup完了後にrerun → 次の描画サイクルでcookieを書く
+if _should_rerun:
+    st.rerun()
+
+# 診断結果の表示（rerun後の描画サイクルで実行）
+if st.session_state.get("last_result"):
+    render_result(st.session_state.last_result)
+
+    today = datetime.now().strftime("%Y年%m月%d日")
+    _ctx = st.session_state.last_context
+    context_line = f"\n> コンテキスト：{_ctx}\n" if _ctx else ""
+    md_content = (
+        f"# ランニングフォーム診断レポート\n\n"
+        f"診断日：{today}{context_line}\n\n---\n\n"
+        f"{st.session_state.last_result}"
+    )
+    st.download_button(
+        label="診断結果をダウンロード（Markdown）",
+        data=md_content.encode("utf-8-sig"),
+        file_name=f"running_form_diagnosis_{datetime.now().strftime('%Y%m%d')}.md",
+        mime="text/markdown",
+    )
 
 render_footer()
