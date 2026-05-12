@@ -2,7 +2,7 @@
 Running Form Diagnosis - Main App
 ランニング動画をアップロードしてGeminiにフォーム診断させるStreamlitアプリ
 """
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import streamlit as st
 from google import genai
@@ -66,8 +66,14 @@ if not st.session_state.counts_loaded:
 
 # rerun直前にset()すると書き込みが失われるため、次の描画サイクル先頭でまとめて書く
 if st.session_state.get("cookie_write_pending"):
-    _cookie_controller.set("rfd_date", datetime.today().strftime("%Y-%m-%d"))
-    _cookie_controller.set("rfd_diag_count", str(st.session_state.diagnosis_count))
+    _cookie_opts = dict(
+        same_site='none',
+        secure=True,
+        partitioned=True,
+        expires=datetime.now() + timedelta(days=2),
+    )
+    _cookie_controller.set("rfd_date", datetime.today().strftime("%Y-%m-%d"), **_cookie_opts)
+    _cookie_controller.set("rfd_diag_count", str(st.session_state.diagnosis_count), **_cookie_opts)
     st.session_state.cookie_write_pending = False
 
 # =============================================

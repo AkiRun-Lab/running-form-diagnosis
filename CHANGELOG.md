@@ -1,5 +1,16 @@
 # 更新履歴
 
+## v1.2.3 — 2026-05-12
+
+### 修正
+
+- iframeに埋め込んだ場合にcookie制限が無効化される問題を修正
+- cookie書き込み時に `SameSite=None; Secure; Partitioned` を設定（Chrome 114+ / Firefox対応）
+- `expires` を明示的に2日後に設定（日付またぎ後も確実に残るよう）
+- ※ Safari は ITP によりiframe内ストレージ自体がブロックされるため回避不可
+
+---
+
 ## v1.2.2 — 2026-05-12
 
 ### 修正
