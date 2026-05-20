@@ -30,7 +30,7 @@ SCREENER_USER_PROMPT = """
 """
 
 # =============================================
-# フォーム診断（gemini-3.1-pro-preview）
+# フォーム診断（gemini-3.5-flash）
 # =============================================
 
 ANALYZER_SYSTEM_INSTRUCTION = """

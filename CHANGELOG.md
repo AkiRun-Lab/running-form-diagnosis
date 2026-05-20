@@ -1,5 +1,16 @@
 # 更新履歴
 
+## v1.3.0 — 2026-05-21
+
+### 変更
+
+- メイン診断モデルを `gemini-3.1-pro-preview` から `gemini-3.5-flash` に移行
+- Gemini 3.5 Flash の仕様に合わせてAPIパラメータを更新
+  - `temperature` / `top_p` / `top_k` を削除（3.5 Flash はデフォルト設定に最適化済みのため非推奨）
+  - `thinking_budget` を 8192 → 16384 に増加（3.5 Flash の上限拡大を活用）
+
+---
+
 ## v1.2.3 — 2026-05-12
 
 ### 修正

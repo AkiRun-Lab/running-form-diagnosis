@@ -19,9 +19,6 @@ from google.genai import types
 
 from .config import (
     GEMINI_ANALYZER_MODEL,
-    GEMINI_TEMPERATURE,
-    GEMINI_TOP_P,
-    GEMINI_TOP_K,
     GEMINI_MAX_OUTPUT_TOKENS,
     GEMINI_THINKING_BUDGET,
     UPLOAD_POLL_INTERVAL_SEC,
@@ -90,7 +87,7 @@ def upload_video(client: genai.Client, video_bytes: bytes, filename: str):
 
 
 def analyze_form(client: genai.Client, video_file, context: str) -> str:
-    """gemini-3.1-pro-preview でランニングフォームを診断する。
+    """gemini-3.5-flash でランニングフォームを診断する。
 
     Args:
         client:     初期化済みの genai.Client
@@ -111,9 +108,6 @@ def analyze_form(client: genai.Client, video_file, context: str) -> str:
             contents=[video_file, user_prompt],
             config=types.GenerateContentConfig(
                 system_instruction=ANALYZER_SYSTEM_INSTRUCTION,
-                temperature=GEMINI_TEMPERATURE,
-                top_p=GEMINI_TOP_P,
-                top_k=GEMINI_TOP_K,
                 max_output_tokens=GEMINI_MAX_OUTPUT_TOKENS,
                 thinking_config=types.ThinkingConfig(
                     thinking_budget=GEMINI_THINKING_BUDGET,

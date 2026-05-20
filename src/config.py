@@ -7,27 +7,23 @@ Running Form Diagnosis - Configuration
 # アプリ情報
 # =============================================
 APP_NAME = "ランニングフォーム診断アプリ"
-APP_VERSION = "1.2.3"
+APP_VERSION = "1.3.0"
 
 # =============================================
 # Gemini API Configuration
 # =============================================
 # スクリーニング用：高速・低コスト
 GEMINI_SCREENER_MODEL = "gemini-3.1-flash-lite"
+GEMINI_SCREENER_TEMPERATURE = 0.2
 
 # メイン診断用：深いバイオメカニクス推論
-GEMINI_ANALYZER_MODEL = "gemini-3.1-pro-preview"
+GEMINI_ANALYZER_MODEL = "gemini-3.5-flash"
 
-# 診断パラメータ（Gemini壁打ち推奨値）
-# ハルシネーション抑制・物理法則ベースの一貫した出力のため低めに設定
-GEMINI_TEMPERATURE = 0.2
-GEMINI_TOP_P = 0.8
-GEMINI_TOP_K = 32
 GEMINI_MAX_OUTPUT_TOKENS = 16384
 
-# Thinking Config
-# 接地・骨盤・腕振りの連動性など物理的因果関係の深い推論のために確保
-GEMINI_THINKING_BUDGET = 8192
+# Thinking Config（thinking_budget: 0=無効, -1=自動, N=最大Nトークン）
+# バイオメカニクスの物理的因果関係の深い推論のため高めに設定
+GEMINI_THINKING_BUDGET = 16384
 
 # =============================================
 # 動画アップロード設定

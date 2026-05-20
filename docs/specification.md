@@ -5,7 +5,7 @@
 | 項目 | 内容 |
 |------|------|
 | アプリ名 | ランニングフォーム診断 |
-| バージョン | 1.0.0 |
+| バージョン | 1.3.0 |
 | フレームワーク | Streamlit |
 | ホスティング | Streamlit Community Cloud |
 | 本番URL | https://running-form-diagnosis.streamlit.app/ |
@@ -30,8 +30,8 @@ Streamlit app.py
     ・5秒以上5分以下か
     → {"ok": bool, "reason": str} を返す
   ↓ ok=True の場合のみ
-[3] gemini-3.1-pro-preview（フォーム診断）
-    ・Thinking Budget 8192 tokens で深層推論
+[3] gemini-3.5-flash（フォーム診断）
+    ・Thinking Budget 16384 tokens で深層推論
     ・接地・骨盤・腕振り・上下動・疲労による代償動作を分析
     → マークダウン形式の診断レポートを返す
   ↓
@@ -51,15 +51,14 @@ Streamlit 診断結果表示 + Markdown ダウンロードボタン
 | temperature | 0.2 | ハルシネーション抑制 |
 | max_output_tokens | 256 | JSON のみを返すため小さく設定 |
 
-### 診断（gemini-3.1-pro-preview）
+### 診断（gemini-3.5-flash）
 
 | パラメータ | 値 | 理由 |
 |-----------|-----|------|
-| temperature | 0.2 | 物理法則に基づく一貫したフィードバックのため低く設定 |
-| top_p | 0.8 | 確率の低い突飛な表現を排除 |
-| top_k | 32 | 専門用語の安定した出力 |
 | max_output_tokens | 16384 | 詳細な診断レポートに対応 |
-| thinking_budget | 8192 | 接地・骨盤・腕振りの物理的因果関係の深い推論のために確保 |
+| thinking_budget | 16384 | 接地・骨盤・腕振りの物理的因果関係の深い推論のために確保 |
+
+※ `temperature` / `top_p` / `top_k` は Gemini 3.5 Flash のデフォルト設定に最適化済みのため非推奨（指定しない）
 
 ---
 
@@ -77,7 +76,7 @@ running-form-diagnosis/
 ├── src/
 │   ├── config.py               # モデル名・APIパラメータ定数
 │   ├── screener.py             # gemini-3.1-flash-lite によるスクリーニング
-│   ├── analyzer.py             # アップロード・診断・クリーンアップ
+│   ├── analyzer.py             # アップロード・診断（gemini-3.5-flash）・クリーンアップ
 │   ├── prompts.py              # システムインストラクション・プロンプトテンプレート
 │   └── ui/
 │       └── components.py       # render_header / render_result / render_footer
