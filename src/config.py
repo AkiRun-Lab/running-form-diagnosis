@@ -7,7 +7,7 @@ Running Form Diagnosis - Configuration
 # アプリ情報
 # =============================================
 APP_NAME = "ランニングフォーム診断アプリ"
-APP_VERSION = "1.3.1"
+APP_VERSION = "1.3.2"
 
 # =============================================
 # Gemini API Configuration
@@ -35,3 +35,7 @@ MAX_DIAGNOSES_PER_DAY = 1
 # Files API ポーリング設定
 UPLOAD_POLL_INTERVAL_SEC = 2
 UPLOAD_TIMEOUT_SEC = 120
+
+# 動画長さ制限（秒）
+MIN_VIDEO_DURATION_SEC = 5
+MAX_VIDEO_DURATION_SEC = 300  # 5分

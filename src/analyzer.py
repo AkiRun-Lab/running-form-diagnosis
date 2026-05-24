@@ -23,8 +23,28 @@ from .config import (
     GEMINI_THINKING_BUDGET,
     UPLOAD_POLL_INTERVAL_SEC,
     UPLOAD_TIMEOUT_SEC,
+    MIN_VIDEO_DURATION_SEC,
+    MAX_VIDEO_DURATION_SEC,
 )
 from .prompts import ANALYZER_SYSTEM_INSTRUCTION, build_analyzer_prompt
+
+
+def _get_video_duration_seconds(video_file) -> float | None:
+    """Files APIのメタデータから動画の長さ（秒）を取得する。取得できない場合はNone。"""
+    try:
+        meta = video_file.video_metadata
+        if meta is None:
+            return None
+        dur = meta.video_duration
+        if dur is None:
+            return None
+        if hasattr(dur, "total_seconds"):
+            return dur.total_seconds()
+        if hasattr(dur, "seconds"):
+            return float(dur.seconds) + getattr(dur, "nanos", 0) / 1e9
+        return None
+    except Exception:
+        return None
 
 
 # 拡張子 → MIME タイプ
@@ -82,6 +102,16 @@ def upload_video(client: genai.Client, video_bytes: bytes, filename: str):
 
     if video_file.state.name == "FAILED":
         raise RuntimeError("動画の処理に失敗しました。別の動画ファイルをお試しください。")
+
+    # 動画の長さチェック（Files APIのメタデータを使用）
+    duration = _get_video_duration_seconds(video_file)
+    if duration is not None:
+        if duration < MIN_VIDEO_DURATION_SEC:
+            client.files.delete(name=video_file.name)
+            raise ValueError(f"動画の長さが {duration:.1f} 秒です。{MIN_VIDEO_DURATION_SEC}秒以上の動画をアップロードしてください。")
+        if duration > MAX_VIDEO_DURATION_SEC:
+            client.files.delete(name=video_file.name)
+            raise ValueError(f"動画の長さが {int(duration // 60)} 分 {int(duration % 60)} 秒です。{MAX_VIDEO_DURATION_SEC // 60}分以内の動画をアップロードしてください。")
 
     return video_file
 

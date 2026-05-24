@@ -5,7 +5,7 @@
 | 項目 | 内容 |
 |------|------|
 | アプリ名 | ランニングフォーム診断 |
-| バージョン | 1.3.0 |
+| バージョン | 1.3.2 |
 | フレームワーク | Streamlit |
 | ホスティング | Streamlit Community Cloud |
 | 本番URL | https://running-form-diagnosis.streamlit.app/ |
@@ -24,18 +24,21 @@ Streamlit app.py
 [1] Gemini Files API
     動画をアップロード → ACTIVE 状態になるまでポーリング
   ↓
-[2] gemini-3.1-flash-lite（スクリーニング）
+[2] 動画長さチェック（Python側・Files APIメタデータ）
+    ・video_metadata.video_duration で 5秒以上5分以下か確認
+    → 範囲外の場合はファイルを削除してエラーを返す
+  ↓
+[3] gemini-3.1-flash-lite（スクリーニング）
     ・全身が映っているか
     ・ランナー（人物）が映っているか
-    ・5秒以上5分以下か
     → {"ok": bool, "reason": str} を返す
   ↓ ok=True の場合のみ
-[3] gemini-3.5-flash（フォーム診断）
+[4] gemini-3.5-flash（フォーム診断）
     ・Thinking Budget 16384 tokens で深層推論
     ・接地・骨盤・腕振り・上下動・疲労による代償動作を分析
     → マークダウン形式の診断レポートを返す
   ↓
-[4] Gemini Files API からファイルを削除（cleanup）
+[5] Gemini Files API からファイルを削除（cleanup）
   ↓
 Streamlit 診断結果表示 + Markdown ダウンロードボタン
 ```

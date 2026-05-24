@@ -178,6 +178,9 @@ if run_btn and uploaded_file:
         st.session_state.cookie_write_pending = True
         _should_rerun = True
 
+    except ValueError as e:
+        st.error(str(e))
+
     except RuntimeError as e:
         err_msg = str(e)
         if "429_RATE_LIMITED" in err_msg:
