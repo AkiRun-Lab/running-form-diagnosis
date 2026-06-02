@@ -11,7 +11,7 @@ from streamlit_cookies_controller import CookieController
 from src.config import APP_NAME, APP_VERSION, SUPPORTED_VIDEO_TYPES, MAX_VIDEO_SIZE_MB, MAX_DIAGNOSES_PER_DAY
 from src.screener import screen_video
 from src.analyzer import upload_video, analyze_form, cleanup_video
-from src.ui.components import render_header, render_result, render_footer
+from src.ui.components import render_header, render_result, render_gear_cta, render_footer
 
 # =============================================
 # ページ設定（最初に呼ぶ）
@@ -201,6 +201,7 @@ if _should_rerun:
 # 診断結果の表示（rerun後の描画サイクルで実行）
 if st.session_state.get("last_result"):
     render_result(st.session_state.last_result)
+    render_gear_cta()
 
     today = datetime.now().strftime("%Y年%m月%d日")
     _ctx = st.session_state.last_context

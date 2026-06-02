@@ -4,7 +4,69 @@ Running Form Diagnosis - UI Components
 """
 import streamlit as st
 
-from ..config import APP_NAME, APP_VERSION
+from ..config import APP_NAME, APP_VERSION, AMAZON_FITNESS_LIST_URL
+
+
+def render_gear_cta() -> None:
+    """補強メニュー実践用の筋トレ・フィットネスグッズへ誘導するCTAカード"""
+    st.markdown(
+        f"""
+<style>
+.akirun-gear-cta {{
+    background: linear-gradient(135deg, #F4C66B, #E0A23D);
+    border-radius: 14px;
+    padding: 22px 20px;
+    margin: 18px 0 8px;
+    text-align: center;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+}}
+.akirun-gear-cta .gear-title {{
+    color: #1F3A6B;
+    font-weight: 700;
+    font-size: clamp(1.05rem, 4.2vw, 1.3rem);
+    margin: 0 0 6px;
+}}
+.akirun-gear-cta .gear-sub {{
+    color: #4a3b14;
+    font-size: clamp(0.85rem, 3.2vw, 0.95rem);
+    line-height: 1.6;
+    margin: 0 auto 14px;
+    max-width: 36em;
+}}
+.akirun-gear-cta-btn {{
+    display: inline-block;
+    background: #1F3A6B;
+    color: #ffffff !important;
+    font-weight: 700;
+    font-size: clamp(0.95rem, 3.6vw, 1.1rem);
+    text-decoration: none !important;
+    padding: 13px 30px;
+    border-radius: 9px;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.22);
+    transition: transform .12s ease, filter .12s ease;
+}}
+.akirun-gear-cta-btn:hover, .akirun-gear-cta-btn:visited, .akirun-gear-cta-btn:focus {{
+    color: #ffffff !important;
+    text-decoration: none !important;
+    filter: brightness(1.12);
+    transform: translateY(-1px);
+}}
+.akirun-gear-cta .gear-note {{
+    color: #5a4a1f;
+    font-size: 0.78rem;
+    margin: 12px 0 0;
+}}
+</style>
+<div class="akirun-gear-cta">
+    <p class="gear-title">💪 補強メニューを、自宅で実践する</p>
+    <p class="gear-sub">上の診断で挙がった補強種目に必要な用品を、用途別にAmazonのおすすめリストにまとめました。
+    殿筋・体幹・足首の安定づくりと弾性の強化に役立つグッズを揃えています。</p>
+    <a class="akirun-gear-cta-btn" href="{AMAZON_FITNESS_LIST_URL}" target="_blank" rel="noopener noreferrer sponsored">筋トレ・補強グッズを見る ›</a>
+    <p class="gear-note">ランナーの補強に必要なものを用途別に整理しています</p>
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def render_header() -> None:

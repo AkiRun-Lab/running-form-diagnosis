@@ -24,7 +24,13 @@
 
 ## ローカルでの起動
 
+> **Python 3.10 以上が必要**です（コードが型注釈に PEP 604 の `X | None` 構文を使用しているため、3.9 以下では `TypeError: unsupported operand type(s) for |` が出ます）。3.11 を推奨します。
+
 ```bash
+# 仮想環境を作成（3.11 推奨）。macOS で 3.11 が無ければ brew install python@3.11
+python3.11 -m venv .venv
+source .venv/bin/activate
+
 # 依存パッケージのインストール
 pip install -r requirements.txt
 
@@ -32,9 +38,11 @@ pip install -r requirements.txt
 cp .streamlit/secrets.toml.example .streamlit/secrets.toml
 # secrets.toml を編集して GEMINI_API_KEY を設定
 
-# アプリ起動
-python3 -m streamlit run app.py
+# アプリ起動（venv 有効化済みなら streamlit コマンドがそのまま使える）
+streamlit run app.py
 ```
+
+停止は `Ctrl + C`、仮想環境を抜けるには `deactivate`。
 
 ## デプロイ
 

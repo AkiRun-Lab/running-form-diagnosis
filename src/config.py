@@ -7,7 +7,11 @@ Running Form Diagnosis - Configuration
 # アプリ情報
 # =============================================
 APP_NAME = "ランニングフォーム診断アプリ"
-APP_VERSION = "1.3.2"
+APP_VERSION = "1.5.0"
+
+# Amazonおすすめリスト⑦（ランナーの補強・筋トレ）の送客先URL。
+# 公開情報（シークレットではない）。リスト未確定時はストアトップにフォールバック。
+AMAZON_FITNESS_LIST_URL = "https://amzn.to/4o3iHCx"
 
 # =============================================
 # Gemini API Configuration
