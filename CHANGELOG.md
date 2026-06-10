@@ -1,5 +1,14 @@
 # 更新履歴
 
+## v1.5.1 — 2026-06-11
+
+### 🤖 Gemini 3.5 Flash パラメータ最新化
+- 診断モデル（analyzer）は既に `gemini-3.5-flash`。思考パラメータを `thinking_budget`（数値）から推奨の `thinking_level`（段階）へ移行。深いバイオメカニクス推論のため `"high"` を指定。
+- `temperature` を screener から削除。Gemini 3.x ではサンプリングパラメータ（temperature/top_p/top_k）が非推奨化され、デフォルト設定が最適化済みのため（公式ドキュメント準拠）。
+- `requirements.txt` の `google-genai` を `>=2.7.0` に引き上げ（`thinking_level` 対応バージョンを保証）。
+
+---
+
 ## v1.5.0 — 2026-06-03
 
 ### 追加

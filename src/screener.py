@@ -10,7 +10,6 @@ from google.genai import types
 
 from .config import (
     GEMINI_SCREENER_MODEL,
-    GEMINI_SCREENER_TEMPERATURE,
 )
 from .prompts import (
     SCREENER_SYSTEM_INSTRUCTION,
@@ -36,7 +35,6 @@ def screen_video(client: genai.Client, video_file) -> dict:
             contents=[video_file, SCREENER_USER_PROMPT],
             config=types.GenerateContentConfig(
                 system_instruction=SCREENER_SYSTEM_INSTRUCTION,
-                temperature=GEMINI_SCREENER_TEMPERATURE,
                 max_output_tokens=256,
             ),
         )

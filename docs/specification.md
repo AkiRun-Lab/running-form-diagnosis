@@ -34,7 +34,7 @@ Streamlit app.py
     → {"ok": bool, "reason": str} を返す
   ↓ ok=True の場合のみ
 [4] gemini-3.5-flash（フォーム診断）
-    ・Thinking Budget 16384 tokens で深層推論
+    ・thinking_level=high で深層推論
     ・接地・骨盤・腕振り・上下動・疲労による代償動作を分析
     → マークダウン形式の診断レポートを返す
   ↓
@@ -51,15 +51,16 @@ Streamlit 診断結果表示 + Markdown ダウンロードボタン
 
 | パラメータ | 値 | 理由 |
 |-----------|-----|------|
-| temperature | 0.2 | ハルシネーション抑制 |
 | max_output_tokens | 256 | JSON のみを返すため小さく設定 |
+
+※ `temperature` / `top_p` / `top_k` は全 Gemini 3.x モデルで非推奨のため指定しない。
 
 ### 診断（gemini-3.5-flash）
 
 | パラメータ | 値 | 理由 |
 |-----------|-----|------|
 | max_output_tokens | 16384 | 詳細な診断レポートに対応 |
-| thinking_budget | 16384 | 接地・骨盤・腕振りの物理的因果関係の深い推論のために確保 |
+| thinking_level | high | 接地・骨盤・腕振りの物理的因果関係の深い推論のために最大段階を指定 |
 
 ※ `temperature` / `top_p` / `top_k` は Gemini 3.5 Flash のデフォルト設定に最適化済みのため非推奨（指定しない）
 
