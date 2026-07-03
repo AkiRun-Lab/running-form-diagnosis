@@ -43,6 +43,8 @@ def screen_video(client: genai.Client, video_file) -> dict:
         err = str(e)
         if "429" in err or "Resource Exhausted" in err:
             raise RuntimeError("429_RATE_LIMITED: APIのレート制限に達しました。しばらく待ってから再試行してください。")
+        if "503" in err or "Service Unavailable" in err:
+            raise RuntimeError("503_SERVICE_UNAVAILABLE: APIが一時的に利用できません。しばらく待ってから再試行してください。")
         raise RuntimeError(f"スクリーニング中にエラーが発生しました: {err}")
 
     # 応答の解釈に失敗した場合は通過させる（診断優先）。

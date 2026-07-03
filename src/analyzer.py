@@ -92,6 +92,7 @@ def upload_video(client: genai.Client, video_bytes: bytes, filename: str):
     elapsed = 0
     while video_file.state.name == "PROCESSING":
         if elapsed >= UPLOAD_TIMEOUT_SEC:
+            cleanup_video(client, video_file)  # 48hの自動削除を待たずbest-effortで削除
             raise RuntimeError(
                 f"動画の処理がタイムアウトしました（{UPLOAD_TIMEOUT_SEC}秒）。"
                 "短い動画か圧縮された動画をお試しください。"

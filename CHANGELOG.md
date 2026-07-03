@@ -14,6 +14,12 @@
 - `ADMIN_PASSWORD` 未設定時に空パスワードで管理者ログインできる問題を修正（未設定時は常に拒否）（Y-4）
 - screenerの空レスポンス（`response.text` がNone）や「```」だけの応答で生エラーが表示される問題を修正。JSONパース失敗と同じ「通過（診断優先）」フォールバックに統一（Y-5）
 
+#### フェーズ3（任意）
+- screenerに503ハンドリングを追加（analyzerと対称に）（G-1）
+- 動画処理タイムアウト時にFiles API上のファイル削除を試みるよう変更（48hの自動削除への依存を解消）（G-2）
+- `.streamlit/config.toml` に `[server] maxUploadSize = 200` を明示（`MAX_VIDEO_SIZE_MB` との一致を固定）（G-3）
+- 管理者パスワード比較を `hmac.compare_digest` に変更（タイミング攻撃対策）（G-4）
+
 ---
 
 ## v1.5.1 — 2026-06-11

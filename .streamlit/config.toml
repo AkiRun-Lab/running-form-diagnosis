@@ -1,3 +1,7 @@
+[server]
+# src/config.py の MAX_VIDEO_SIZE_MB と一致させる（Streamlitデフォルト200MBへの暗黙依存を排除）
+maxUploadSize = 200
+
 [theme]
 base="dark"
 primaryColor="#FF4B4B"

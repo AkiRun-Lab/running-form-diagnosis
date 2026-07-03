@@ -2,6 +2,7 @@
 Running Form Diagnosis - Main App
 ランニング動画をアップロードしてGeminiにフォーム診断させるStreamlitアプリ
 """
+import hmac
 from datetime import timedelta
 
 import streamlit as st
@@ -102,7 +103,7 @@ with st.sidebar:
         if st.button("ログイン"):
             expected_pw = st.secrets.get("ADMIN_PASSWORD", "")
             # ADMIN_PASSWORD未設定時は空パスワードが一致してしまうため、未設定なら常に拒否
-            if expected_pw and admin_pw == expected_pw:
+            if expected_pw and hmac.compare_digest(admin_pw, expected_pw):
                 st.session_state.is_admin = True
                 st.rerun()
             else:
