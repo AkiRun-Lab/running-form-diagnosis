@@ -144,7 +144,6 @@ def analyze_form(client: genai.Client, video_file, context: str) -> str:
                 ),
             ),
         )
-        return response.text
 
     except Exception as e:
         err = str(e)
@@ -153,6 +152,21 @@ def analyze_form(client: genai.Client, video_file, context: str) -> str:
         if "503" in err or "Service Unavailable" in err:
             raise RuntimeError("503_SERVICE_UNAVAILABLE: APIが一時的に利用できません。しばらく待ってから再試行してください。")
         raise RuntimeError(f"診断中にエラーが発生しました: {err}")
+
+    # 空レスポンスガード：本文が無いまま返すと、結果非表示のまま診断枠だけ消費される
+    text = response.text
+    if not text or not text.strip():
+        finish_reason = ""
+        try:
+            finish_reason = response.candidates[0].finish_reason.name
+        except Exception:
+            pass
+        detail = f"（finish_reason: {finish_reason}）" if finish_reason else ""
+        raise RuntimeError(
+            f"AIが診断テキストを返しませんでした{detail}。"
+            "診断回数は消費されていません。時間をおいて再試行してください。"
+        )
+    return text
 
 
 def cleanup_video(client: genai.Client, video_file) -> None:

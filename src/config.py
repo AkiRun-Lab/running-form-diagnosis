@@ -7,7 +7,7 @@ Running Form Diagnosis - Configuration
 # アプリ情報
 # =============================================
 APP_NAME = "ランニングフォーム診断アプリ"
-APP_VERSION = "1.5.1"
+APP_VERSION = "1.5.2"
 
 # Amazonおすすめリスト⑦（ランナーの補強・筋トレ）の送客先URL。
 # 公開情報（シークレットではない）。リスト未確定時はストアトップにフォールバック。
@@ -22,7 +22,9 @@ GEMINI_SCREENER_MODEL = "gemini-3.1-flash-lite"
 # メイン診断用：深いバイオメカニクス推論
 GEMINI_ANALYZER_MODEL = "gemini-3.5-flash"
 
-GEMINI_MAX_OUTPUT_TOKENS = 16384
+# 注: thinkingトークンも max_output_tokens を消費するため、診断本文の必要量に
+# 思考分（thinking_level="high"）の余裕を上乗せした床値にする（AMCと同基準）
+GEMINI_MAX_OUTPUT_TOKENS = 24576
 
 # 注: temperature / top_p / top_k は全 Gemini 3.x モデルで非推奨となり削除（公式: デフォルト設定が最適化済み）
 # Thinking Config（thinking_level: minimal/low/medium/high）
