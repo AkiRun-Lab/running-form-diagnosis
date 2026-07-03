@@ -2,6 +2,14 @@
 Running Form Diagnosis - Configuration
 アプリケーション全体の設定値を管理
 """
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+
+def jst_now() -> datetime:
+    """日本時間の現在時刻（naive）。Streamlit Cloud（UTC）での日付ズレ防止用。"""
+    return datetime.now(ZoneInfo("Asia/Tokyo")).replace(tzinfo=None)
+
 
 # =============================================
 # アプリ情報

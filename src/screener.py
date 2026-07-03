@@ -39,8 +39,17 @@ def screen_video(client: genai.Client, video_file) -> dict:
             ),
         )
 
-        raw = response.text.strip()
+    except Exception as e:
+        err = str(e)
+        if "429" in err or "Resource Exhausted" in err:
+            raise RuntimeError("429_RATE_LIMITED: APIのレート制限に達しました。しばらく待ってから再試行してください。")
+        raise RuntimeError(f"スクリーニング中にエラーが発生しました: {err}")
 
+    # 応答の解釈に失敗した場合は通過させる（診断優先）。
+    # 空レスポンス・不正なコードブロック・JSONパース失敗をすべて同じ扱いにする
+    raw = (response.text or "").strip()
+
+    try:
         # Geminiがコードブロックで囲んで返す場合を考慮
         if raw.startswith("```"):
             raw = raw.split("```")[1]
@@ -50,18 +59,11 @@ def screen_video(client: genai.Client, video_file) -> dict:
 
         result = json.loads(raw)
 
-        # 最低限のキー保証
-        if "ok" not in result:
-            return {"ok": False, "reason": "スクリーニング結果の形式が不正でした。"}
-
-        return {"ok": bool(result["ok"]), "reason": result.get("reason", "")}
-
-    except json.JSONDecodeError:
-        # JSONパースに失敗した場合は通過させる（診断優先）
+    except (json.JSONDecodeError, IndexError):
         return {"ok": True, "reason": "スクリーニングをスキップして診断に進みます。"}
 
-    except Exception as e:
-        err = str(e)
-        if "429" in err or "Resource Exhausted" in err:
-            raise RuntimeError("429_RATE_LIMITED: APIのレート制限に達しました。しばらく待ってから再試行してください。")
-        raise RuntimeError(f"スクリーニング中にエラーが発生しました: {err}")
+    # 最低限のキー保証
+    if "ok" not in result:
+        return {"ok": False, "reason": "スクリーニング結果の形式が不正でした。"}
+
+    return {"ok": bool(result["ok"]), "reason": result.get("reason", "")}

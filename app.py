@@ -2,13 +2,13 @@
 Running Form Diagnosis - Main App
 ランニング動画をアップロードしてGeminiにフォーム診断させるStreamlitアプリ
 """
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import streamlit as st
 from google import genai
 from streamlit_cookies_controller import CookieController
 
-from src.config import APP_NAME, APP_VERSION, SUPPORTED_VIDEO_TYPES, MAX_VIDEO_SIZE_MB, MAX_DIAGNOSES_PER_DAY
+from src.config import APP_NAME, APP_VERSION, SUPPORTED_VIDEO_TYPES, MAX_VIDEO_SIZE_MB, MAX_DIAGNOSES_PER_DAY, jst_now
 from src.screener import screen_video
 from src.analyzer import upload_video, analyze_form, cleanup_video
 from src.ui.components import render_header, render_result, render_gear_cta, render_footer
@@ -31,7 +31,7 @@ _cookie_controller = CookieController()
 
 def _load_cookie_counts(controller: CookieController) -> int:
     """読み込み専用。書き込みは cookie_write_pending ブロックで行う。"""
-    today = datetime.today().strftime("%Y-%m-%d")
+    today = jst_now().strftime("%Y-%m-%d")
     cookie_date = controller.get("rfd_date") or ""
     if cookie_date != today:
         return 0
@@ -71,9 +71,9 @@ if st.session_state.get("cookie_write_pending"):
         same_site='none',
         secure=True,
         partitioned=True,
-        expires=datetime.now() + timedelta(days=2),
+        expires=jst_now() + timedelta(days=2),
     )
-    _cookie_controller.set("rfd_date", datetime.today().strftime("%Y-%m-%d"), **_cookie_opts)
+    _cookie_controller.set("rfd_date", jst_now().strftime("%Y-%m-%d"), **_cookie_opts)
     _cookie_controller.set("rfd_diag_count", str(st.session_state.diagnosis_count), **_cookie_opts)
     st.session_state.cookie_write_pending = False
 
@@ -100,7 +100,9 @@ with st.sidebar:
     else:
         admin_pw = st.text_input("パスワード", type="password", label_visibility="collapsed")
         if st.button("ログイン"):
-            if admin_pw == st.secrets.get("ADMIN_PASSWORD", ""):
+            expected_pw = st.secrets.get("ADMIN_PASSWORD", "")
+            # ADMIN_PASSWORD未設定時は空パスワードが一致してしまうため、未設定なら常に拒否
+            if expected_pw and admin_pw == expected_pw:
                 st.session_state.is_admin = True
                 st.rerun()
             else:
@@ -203,7 +205,7 @@ if st.session_state.get("last_result"):
     render_result(st.session_state.last_result)
     render_gear_cta()
 
-    today = datetime.now().strftime("%Y年%m月%d日")
+    today = jst_now().strftime("%Y年%m月%d日")
     _ctx = st.session_state.last_context
     context_line = f"\n> コンテキスト：{_ctx}\n" if _ctx else ""
     md_content = (
@@ -214,7 +216,7 @@ if st.session_state.get("last_result"):
     st.download_button(
         label="診断結果をダウンロード（Markdown）",
         data=md_content.encode("utf-8-sig"),
-        file_name=f"running_form_diagnosis_{datetime.now().strftime('%Y%m%d')}.md",
+        file_name=f"running_form_diagnosis_{jst_now().strftime('%Y%m%d')}.md",
         mime="text/markdown",
     )
 

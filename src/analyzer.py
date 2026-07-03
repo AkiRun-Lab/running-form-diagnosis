@@ -98,19 +98,23 @@ def upload_video(client: genai.Client, video_bytes: bytes, filename: str):
             )
         time.sleep(UPLOAD_POLL_INTERVAL_SEC)
         elapsed += UPLOAD_POLL_INTERVAL_SEC
-        video_file = client.files.get(name=video_file.name)
+        try:
+            video_file = client.files.get(name=video_file.name)
+        except Exception as e:
+            raise RuntimeError(f"動画の処理状況の確認に失敗しました: {e}")
 
     if video_file.state.name == "FAILED":
         raise RuntimeError("動画の処理に失敗しました。別の動画ファイルをお試しください。")
 
     # 動画の長さチェック（Files APIのメタデータを使用）
+    # 削除はbest-effort（cleanup_video）。削除失敗で長さエラーをマスクしない
     duration = _get_video_duration_seconds(video_file)
     if duration is not None:
         if duration < MIN_VIDEO_DURATION_SEC:
-            client.files.delete(name=video_file.name)
+            cleanup_video(client, video_file)
             raise ValueError(f"動画の長さが {duration:.1f} 秒です。{MIN_VIDEO_DURATION_SEC}秒以上の動画をアップロードしてください。")
         if duration > MAX_VIDEO_DURATION_SEC:
-            client.files.delete(name=video_file.name)
+            cleanup_video(client, video_file)
             raise ValueError(f"動画の長さが {int(duration // 60)} 分 {int(duration % 60)} 秒です。{MAX_VIDEO_DURATION_SEC // 60}分以内の動画をアップロードしてください。")
 
     return video_file
