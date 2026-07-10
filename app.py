@@ -66,6 +66,7 @@ defaults = {
     "last_context": "",
     "last_weakness": "general",
     "last_scores": None,
+    "last_used_fallback": False,
 }
 for k, v in defaults.items():
     if k not in st.session_state:
@@ -206,7 +207,9 @@ if run_btn and uploaded_file:
                             pct = min(elapsed / ANALYZE_EXPECTED_SEC, 0.95)
                             minutes, seconds = divmod(int(elapsed), 60)
                             # 経過時間は再試行中も常に表示し続ける
-                            if progress_state["attempt"] > 1:
+                            if progress_state.get("fallback"):
+                                label = f"混雑のため代替モデルで解析中... {minutes}分{seconds:02d}秒経過"
+                            elif progress_state["attempt"] > 1:
                                 label = (
                                     f"フォームを解析中... {minutes}分{seconds:02d}秒経過"
                                     f"（API混雑のため自動再試行{progress_state['attempt']}回目/最大{RETRY_503_MAX_ATTEMPTS}回）"
@@ -229,6 +232,7 @@ if run_btn and uploaded_file:
         st.session_state.last_weakness = weakness
         st.session_state.last_scores = scores
         st.session_state.last_context = context.strip()
+        st.session_state.last_used_fallback = bool(progress_state.get("fallback"))
         st.session_state.diagnosis_count += 1
         st.session_state.cookie_write_pending = True
         _should_rerun = True
@@ -258,11 +262,18 @@ if _should_rerun:
 # 診断結果の表示（rerun後の描画サイクルで実行）
 if st.session_state.get("last_result"):
     render_result(st.session_state.last_result, st.session_state.last_scores)
+    if st.session_state.get("last_used_fallback"):
+        st.caption("※ APIの混雑のため、代替モデル（Gemini 3 Flash）で診断しました。")
     render_gear_cta(st.session_state.last_weakness)
 
     today = jst_now().strftime("%Y年%m月%d日")
     _ctx = st.session_state.last_context
     context_line = f"\n> コンテキスト：{_ctx}\n" if _ctx else ""
+    fallback_line = (
+        "\n> ※ APIの混雑のため、代替モデル（Gemini 3 Flash）で診断しました。\n"
+        if st.session_state.get("last_used_fallback")
+        else ""
+    )
 
     _scores = st.session_state.last_scores
     scores_section = ""
@@ -281,7 +292,7 @@ if st.session_state.get("last_result"):
 
     md_content = (
         f"# ランニングフォーム診断レポート\n\n"
-        f"診断日：{today}{context_line}\n\n---\n"
+        f"診断日：{today}{fallback_line}{context_line}\n\n---\n"
         f"{scores_section}\n"
         f"{st.session_state.last_result}"
     )

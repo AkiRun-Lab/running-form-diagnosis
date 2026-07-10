@@ -15,7 +15,7 @@ def jst_now() -> datetime:
 # アプリ情報
 # =============================================
 APP_NAME = "ランニングフォーム診断アプリ"
-APP_VERSION = "1.9.2"
+APP_VERSION = "1.10.0"
 
 # 診断スコアの5項目（キー: Geminiに出力させる英語キー、値: 表示ラベル）
 SCORE_ITEMS = {
@@ -69,6 +69,11 @@ GEMINI_SCREENER_MODEL = "gemini-3.1-flash-lite"
 # メイン診断用：深いバイオメカニクス推論
 GEMINI_ANALYZER_MODEL = "gemini-3.5-flash"
 
+# 503フォールバック用の代替診断モデル（Gemini 3系・thinking_level対応を確認済み 2026-07-10）。
+# プライマリがRETRY_503_MAX_ATTEMPTS回連続503のとき、このモデルでFALLBACK_503_MAX_ATTEMPTS回まで試行する。
+# モデルはリクエスト単位で選ばれるため、次の診断は常にプライマリから始まる
+GEMINI_ANALYZER_FALLBACK_MODEL = "gemini-3-flash-preview"
+
 # 注: thinkingトークンも max_output_tokens を消費するため、診断本文の必要量に
 # 思考分（thinking_level="high"）の余裕を上乗せした床値にする（AMCと同基準）
 GEMINI_MAX_OUTPUT_TOKENS = 24576
@@ -85,6 +90,8 @@ SCREEN_TIMEOUT_SEC = 60
 # 503（モデル高負荷）時の自動リトライ：最大試行回数と待機秒
 RETRY_503_MAX_ATTEMPTS = 3
 RETRY_503_WAIT_SEC = 10
+# プライマリが503で尽きた際のフォールバックモデルの最大試行回数
+FALLBACK_503_MAX_ATTEMPTS = 2
 # プログレスバーの目安時間（秒）。この時間で95%に達し、完了まで頭打ち
 ANALYZE_EXPECTED_SEC = 120
 
