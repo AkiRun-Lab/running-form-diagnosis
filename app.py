@@ -11,7 +11,7 @@ from streamlit_cookies_controller import CookieController
 
 from src.config import APP_NAME, APP_VERSION, SUPPORTED_VIDEO_TYPES, MAX_VIDEO_SIZE_MB, MAX_DIAGNOSES_PER_DAY, jst_now
 from src.screener import screen_video
-from src.analyzer import upload_video, analyze_form, cleanup_video
+from src.analyzer import upload_video, analyze_form, cleanup_video, extract_weakness_tag
 from src.ui.components import render_header, render_result, render_gear_cta, render_footer
 
 # =============================================
@@ -50,6 +50,7 @@ defaults = {
     "_first_render_done": False,
     "last_result": None,
     "last_context": "",
+    "last_weakness": "general",
 }
 for k, v in defaults.items():
     if k not in st.session_state:
@@ -175,7 +176,9 @@ if run_btn and uploaded_file:
             result = analyze_form(client, video_file, context)
             status.update(label="診断完了", state="complete")
 
-        st.session_state.last_result = result
+        result_body, weakness = extract_weakness_tag(result)
+        st.session_state.last_result = result_body
+        st.session_state.last_weakness = weakness
         st.session_state.last_context = context.strip()
         st.session_state.diagnosis_count += 1
         st.session_state.cookie_write_pending = True
@@ -204,7 +207,7 @@ if _should_rerun:
 # 診断結果の表示（rerun後の描画サイクルで実行）
 if st.session_state.get("last_result"):
     render_result(st.session_state.last_result)
-    render_gear_cta()
+    render_gear_cta(st.session_state.last_weakness)
 
     today = jst_now().strftime("%Y年%m月%d日")
     _ctx = st.session_state.last_context

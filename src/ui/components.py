@@ -4,11 +4,17 @@ Running Form Diagnosis - UI Components
 """
 import streamlit as st
 
-from ..config import APP_NAME, APP_VERSION, AMAZON_FITNESS_LIST_URL
+from ..config import APP_NAME, APP_VERSION, WEAKNESS_CTA_VARIANTS
 
 
-def render_gear_cta() -> None:
-    """補強メニュー実践用の筋トレ・フィットネスグッズへ誘導するCTAカード"""
+def render_gear_cta(weakness: str = "general") -> None:
+    """補強メニュー実践用の筋トレ・フィットネスグッズへ誘導するCTAカード
+
+    Args:
+        weakness: 診断結果から抽出した弱点カテゴリ（analyzer.extract_weakness_tag() の戻り値）。
+                   未知のカテゴリの場合は "general" の文言にフォールバックする。
+    """
+    variant = WEAKNESS_CTA_VARIANTS.get(weakness, WEAKNESS_CTA_VARIANTS["general"])
     st.markdown(
         f"""
 <style>
@@ -58,10 +64,9 @@ def render_gear_cta() -> None:
 }}
 </style>
 <div class="akirun-gear-cta">
-    <p class="gear-title">💪 補強メニューを、自宅で実践する</p>
-    <p class="gear-sub">上の診断で挙がった補強種目に必要な用品を、用途別にAmazonのおすすめリストにまとめました。
-    殿筋・体幹・足首の安定づくりと弾性の強化に役立つグッズを揃えています。</p>
-    <a class="akirun-gear-cta-btn" href="{AMAZON_FITNESS_LIST_URL}" target="_blank" rel="noopener noreferrer sponsored">筋トレ・補強グッズを見る ›</a>
+    <p class="gear-title">{variant["title"]}</p>
+    <p class="gear-sub">{variant["sub"]}</p>
+    <a class="akirun-gear-cta-btn" href="{variant["url"]}" target="_blank" rel="noopener noreferrer sponsored">筋トレ・補強グッズを見る ›</a>
     <p class="gear-note">ランナーの補強に必要なものを用途別に整理しています</p>
 </div>
         """,

@@ -1,5 +1,15 @@
 # 更新履歴
 
+## v1.6.0 — 2026-07-10
+
+### 追加
+
+- 弱点連動CTA：診断結果の弱点カテゴリ（殿筋・体幹／可動域／弾性／上半身／該当なし）に応じて、診断結果直下のCTAカード（`render_gear_cta()`）の見出し・訴求文を切り替え
+- Gemini（analyzer）の出力末尾に `WEAKNESS_TAG: <カテゴリ>` を1行出力させ、Python側（`analyzer.extract_weakness_tag()`）で抽出・本文から除去。カテゴリ別文言は `config.py` の `WEAKNESS_CTA_VARIANTS` で管理
+- 送客先URLは当面全カテゴリ共通（リスト⑦）。カテゴリ別リストを作成後に差し替え予定
+
+---
+
 ## v1.5.2 — 2026-07-03
 
 ### 🔧 コードレビュー対応（レポート: `docs/code-review/rfd-2026-07-03.md`）
