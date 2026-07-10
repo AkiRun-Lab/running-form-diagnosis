@@ -205,10 +205,11 @@ if run_btn and uploaded_file:
                             elapsed = time.monotonic() - start_time
                             pct = min(elapsed / ANALYZE_EXPECTED_SEC, 0.95)
                             minutes, seconds = divmod(int(elapsed), 60)
+                            # 経過時間は再試行中も常に表示し続ける
                             if progress_state["attempt"] > 1:
                                 label = (
-                                    f"APIが混雑しています。自動再試行中"
-                                    f"（{progress_state['attempt']}回目/最大{RETRY_503_MAX_ATTEMPTS}回）..."
+                                    f"フォームを解析中... {minutes}分{seconds:02d}秒経過"
+                                    f"（API混雑のため自動再試行{progress_state['attempt']}回目/最大{RETRY_503_MAX_ATTEMPTS}回）"
                                 )
                             else:
                                 label = f"フォームを解析中... {minutes}分{seconds:02d}秒経過（目安30秒〜2分）"
