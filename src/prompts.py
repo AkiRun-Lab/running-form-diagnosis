@@ -59,15 +59,30 @@ _ANALYZER_BASE_PROMPT = """
 
 ## 1. 全体評価（良い点）
 動きの連動性や効率的なポイントを具体的に記述してください。
+可能な範囲で、良い動きが確認できるタイムスタンプを添えてください。
 
 ## 2. 改善すべき点
 エネルギーロスが生じているポイントを、力学的な根拠とともに記述してください。
 箇条書きで、各項目に「なぜそうなっているか」「どんな影響があるか」を含めてください。
+各項目の冒頭に、その現象が確認できる動画内のタイムスタンプを付けてください（例：[0:03]、[0:15]）。
+複数箇所で見られる場合は代表的な1〜2箇所でかまいません。
 
 ## 3. 具体的なトレーニング提案
 改善のために取り組むべき種目（ドリル・筋力トレーニング・モビリティ・プライオメトリクス・コア等すべてを含む）を、
 優先度の高い順に3〜5個挙げてください。
 各提案に「目的」「やり方（具体的な回数・距離・セット数など）」「実施タイミング（ウォームアップ後・本練習後・別日など）」を含めてください。
+
+また、以下の5項目を10点満点の整数でスコア化し、WEAKNESS_TAGの直前の行に
+以下の形式の1行だけで出力してください（説明・コードブロック不要）：
+SCORES_JSON: {"foot_strike": 7, "pelvis_core": 6, "arm_swing": 8, "hip_extension": 5, "vertical_osc": 6}
+
+各キーの意味：
+- foot_strike（接地：重心との位置関係・ブレーキ要素の少なさ）
+- pelvis_core（骨盤・体幹：前傾維持・骨盤の安定性）
+- arm_swing（腕振り：推進方向への貢献・力みのなさ）
+- hip_extension（股関節伸展：臀部・ハムストリングスの活用）
+- vertical_osc（上下動：バーティカルオシレーションの適正さ）
+採点基準：10=エリートレベルの効率、7〜9=良好で小さな改善余地、4〜6=明確な改善点あり、1〜3=大きなエネルギーロス
 
 最後に、上記の診断とは別に、最も優先度の高い弱点カテゴリを1つ選び、
 出力の最終行に以下の形式のタグだけを1行で出力してください（見出し・説明は不要）：
@@ -89,10 +104,14 @@ _CONTEXT_WITHOUT_INPUT = ""
 
 
 def build_analyzer_prompt(context: str) -> str:
-    """ユーザーコンテキストの有無に応じてプロンプトを構築する"""
+    """ユーザーコンテキストの有無に応じてプロンプトを構築する
+
+    テンプレート本文にJSON例などの波括弧を含むため str.format() は使わない
+    （ユーザー入力に {} が含まれる場合の事故も防ぐ）。
+    """
     if context and context.strip():
-        context_section = _CONTEXT_WITH_INPUT.format(context=context.strip())
+        context_section = _CONTEXT_WITH_INPUT.replace("{context}", context.strip())
     else:
         context_section = _CONTEXT_WITHOUT_INPUT
 
-    return _ANALYZER_BASE_PROMPT.format(context_section=context_section)
+    return _ANALYZER_BASE_PROMPT.replace("{context_section}", context_section)

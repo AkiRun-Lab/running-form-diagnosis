@@ -4,9 +4,10 @@ Running Form Diagnosis - UI Components
 """
 from pathlib import Path
 
+import plotly.graph_objects as go
 import streamlit as st
 
-from ..config import APP_NAME, APP_VERSION, WEAKNESS_CTA_VARIANTS
+from ..config import APP_NAME, APP_VERSION, SCORE_ITEMS, WEAKNESS_CTA_VARIANTS
 
 
 def load_css() -> None:
@@ -132,7 +133,63 @@ def render_step_indicator() -> None:
     )
 
 
-def render_result(result_text: str) -> None:
+def _render_score_radar(scores: dict) -> None:
+    """5項目スコアのレーダーチャート＋数値サマリーを表示"""
+    keys = list(SCORE_ITEMS.keys())
+    labels = [SCORE_ITEMS[k] for k in keys]
+    values = [scores[k] for k in keys]
+    # 多角形を閉じるため先頭を末尾に重複させる
+    labels_closed = labels + [labels[0]]
+    values_closed = values + [values[0]]
+
+    col_chart, col_summary = st.columns([2, 1])
+
+    with col_chart:
+        fig = go.Figure(go.Scatterpolar(
+            r=values_closed, theta=labels_closed, fill="toself",
+            line=dict(color="#22D3EE", width=2),
+            fillcolor="rgba(34, 211, 238, 0.25)",
+            marker=dict(size=8, color="#22D3EE"),
+            hovertemplate="%{theta}: %{r}点<extra></extra>",
+        ))
+        fig.update_layout(
+            polar=dict(
+                bgcolor="rgba(0,0,0,0)",
+                radialaxis=dict(range=[0, 10], dtick=2, gridcolor="rgba(148,163,184,0.25)",
+                                tickfont=dict(color="#64748B", size=10), linecolor="rgba(148,163,184,0.25)"),
+                angularaxis=dict(tickfont=dict(color="#E2E8F0", size=13),
+                                 gridcolor="rgba(148,163,184,0.25)", linecolor="rgba(148,163,184,0.35)"),
+            ),
+            paper_bgcolor="rgba(0,0,0,0)", showlegend=False,
+            margin=dict(l=50, r=50, t=30, b=30), height=340,
+        )
+        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+    with col_summary:
+        overall = sum(values) / len(values)
+        rows_html = "".join(
+            f'<div style="display:flex; justify-content:space-between; padding:6px 0; '
+            f'border-bottom:1px solid rgba(148,163,184,0.15);">'
+            f'<span style="color:#94A3B8; font-size:0.85rem;">{SCORE_ITEMS[k]}</span>'
+            f'<span style="color:#FFFFFF; font-weight:700; font-size:0.85rem;">{scores[k]}</span>'
+            f'</div>'
+            for k in keys
+        )
+        st.markdown(
+            f"""
+<div style="text-align:center; margin-bottom:0.8rem;">
+    <span style="color:#FFFFFF; font-weight:700; font-size:2.2rem;">{overall:.1f}</span>
+    <span style="color:#94A3B8; font-size:0.8rem;"> / 10</span>
+    <div style="color:#94A3B8; font-size:0.8rem; margin-top:2px;">総合スコア</div>
+    <div style="height:2px; margin:8px auto 0; width:60%; background:linear-gradient(90deg, transparent, #22D3EE, #3B82F6, transparent);"></div>
+</div>
+<div>{rows_html}</div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
+def render_result(result_text: str, scores: dict | None = None) -> None:
     """診断結果を表示"""
     st.markdown("---")
     st.markdown(
@@ -143,6 +200,8 @@ def render_result(result_text: str) -> None:
         '</div>',
         unsafe_allow_html=True,
     )
+    if scores:
+        _render_score_radar(scores)
     st.markdown(result_text)
 
 

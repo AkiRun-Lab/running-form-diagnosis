@@ -19,10 +19,11 @@ from src.config import (
     MAX_DIAGNOSES_PER_DAY,
     ANALYZE_EXPECTED_SEC,
     RETRY_503_MAX_ATTEMPTS,
+    SCORE_ITEMS,
     jst_now,
 )
 from src.screener import screen_video
-from src.analyzer import upload_video, analyze_form, cleanup_video, extract_weakness_tag
+from src.analyzer import upload_video, analyze_form, cleanup_video, extract_weakness_tag, extract_scores_json
 from src.ui.components import render_header, render_result, render_gear_cta, render_footer, load_css, render_step_indicator
 
 # =============================================
@@ -64,6 +65,7 @@ defaults = {
     "last_result": None,
     "last_context": "",
     "last_weakness": "general",
+    "last_scores": None,
 }
 for k, v in defaults.items():
     if k not in st.session_state:
@@ -214,9 +216,11 @@ if run_btn and uploaded_file:
             prog.progress(1.0, text="解析完了")
             status.update(label="診断完了", state="complete")
 
-        result_body, weakness = extract_weakness_tag(result)
+        result_body, scores = extract_scores_json(result)
+        result_body, weakness = extract_weakness_tag(result_body)
         st.session_state.last_result = result_body
         st.session_state.last_weakness = weakness
+        st.session_state.last_scores = scores
         st.session_state.last_context = context.strip()
         st.session_state.diagnosis_count += 1
         st.session_state.cookie_write_pending = True
@@ -246,15 +250,32 @@ if _should_rerun:
 
 # 診断結果の表示（rerun後の描画サイクルで実行）
 if st.session_state.get("last_result"):
-    render_result(st.session_state.last_result)
+    render_result(st.session_state.last_result, st.session_state.last_scores)
     render_gear_cta(st.session_state.last_weakness)
 
     today = jst_now().strftime("%Y年%m月%d日")
     _ctx = st.session_state.last_context
     context_line = f"\n> コンテキスト：{_ctx}\n" if _ctx else ""
+
+    _scores = st.session_state.last_scores
+    scores_section = ""
+    if _scores:
+        _overall = sum(_scores.values()) / len(_scores)
+        _table_rows = "\n".join(
+            f"| {label} | {_scores[key]} |" for key, label in SCORE_ITEMS.items()
+        )
+        scores_section = (
+            f"\n## 診断スコア\n\n"
+            f"| 項目 | スコア |\n"
+            f"|---|---|\n"
+            f"{_table_rows}\n"
+            f"| **総合スコア** | **{_overall:.1f}** |\n\n---\n"
+        )
+
     md_content = (
         f"# ランニングフォーム診断レポート\n\n"
-        f"診断日：{today}{context_line}\n\n---\n\n"
+        f"診断日：{today}{context_line}\n\n---\n"
+        f"{scores_section}\n"
         f"{st.session_state.last_result}"
     )
     st.download_button(

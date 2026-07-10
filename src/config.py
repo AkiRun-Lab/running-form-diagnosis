@@ -15,7 +15,16 @@ def jst_now() -> datetime:
 # アプリ情報
 # =============================================
 APP_NAME = "ランニングフォーム診断アプリ"
-APP_VERSION = "1.8.0"
+APP_VERSION = "1.9.0"
+
+# 診断スコアの5項目（キー: Geminiに出力させる英語キー、値: 表示ラベル）
+SCORE_ITEMS = {
+    "foot_strike": "接地",
+    "pelvis_core": "骨盤・体幹",
+    "arm_swing": "腕振り",
+    "hip_extension": "股関節伸展",
+    "vertical_osc": "上下動",
+}
 
 # Amazonおすすめリスト⑦（ランナーの補強・筋トレ）の送客先URL。
 # 公開情報（シークレットではない）。リスト未確定時はストアトップにフォールバック。

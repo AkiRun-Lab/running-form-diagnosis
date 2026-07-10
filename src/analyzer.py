@@ -12,6 +12,7 @@ Running Form Diagnosis - Analyzer
         cleanup_video(client, video_file)
 """
 import io
+import json
 import re
 import time
 
@@ -26,6 +27,7 @@ from .config import (
     UPLOAD_TIMEOUT_SEC,
     MIN_VIDEO_DURATION_SEC,
     MAX_VIDEO_DURATION_SEC,
+    SCORE_ITEMS,
     WEAKNESS_CTA_VARIANTS,
     ANALYZE_TIMEOUT_SEC,
     RETRY_503_MAX_ATTEMPTS,
@@ -37,6 +39,9 @@ from .prompts import ANALYZER_SYSTEM_INSTRUCTION, build_analyzer_prompt
 VALID_WEAKNESS_TAGS = set(WEAKNESS_CTA_VARIANTS.keys())
 
 _WEAKNESS_TAG_RE = re.compile(r"^\s*WEAKNESS_TAG:\s*([a-zA-Z_]+)\s*$", re.MULTILINE | re.IGNORECASE)
+
+# スコア化：診断テキスト中のSCORES_JSON行（config.pyのSCORE_ITEMSキーと同一に保つ）
+_SCORES_JSON_RE = re.compile(r"^\s*SCORES_JSON:\s*(\{.*?\})\s*$", re.MULTILINE | re.IGNORECASE)
 
 
 def _get_video_duration_seconds(video_file) -> float | None:
@@ -226,6 +231,42 @@ def extract_weakness_tag(text: str) -> tuple[str, str]:
 
     body = text[:match.start()] + text[match.end():]
     return body.rstrip(), tag
+
+
+def extract_scores_json(text: str) -> tuple[str, dict | None]:
+    """診断テキスト中のSCORES_JSON行を抽出し、本文から除去する。
+
+    Args:
+        text: analyze_form() が返す診断テキスト全文（またはextract_weakness_tag適用後の本文）
+
+    Returns:
+        (SCORES_JSON行を除去した本文, {SCORE_ITEMSキー: 1〜10の整数} または None)
+        行が無い、JSONとして壊れている、必須キーの欠落・非数値がある場合は None。
+        行らしきものが見つかった場合は、パース失敗時も本文からは除去する。
+    """
+    matches = list(_SCORES_JSON_RE.finditer(text))
+    if not matches:
+        return text, None
+    match = matches[-1]
+
+    body = (text[:match.start()] + text[match.end():]).rstrip()
+
+    try:
+        data = json.loads(match.group(1))
+    except (json.JSONDecodeError, ValueError):
+        return body, None
+
+    if not isinstance(data, dict):
+        return body, None
+
+    scores: dict[str, int] = {}
+    for key in SCORE_ITEMS:
+        value = data.get(key)
+        if not isinstance(value, (int, float)) or isinstance(value, bool):
+            return body, None
+        scores[key] = max(1, min(10, round(value)))
+
+    return body, scores
 
 
 def cleanup_video(client: genai.Client, video_file) -> None:
