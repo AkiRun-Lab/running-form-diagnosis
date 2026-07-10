@@ -15,7 +15,7 @@ def jst_now() -> datetime:
 # アプリ情報
 # =============================================
 APP_NAME = "ランニングフォーム診断アプリ"
-APP_VERSION = "1.7.0"
+APP_VERSION = "1.8.0"
 
 # Amazonおすすめリスト⑦（ランナーの補強・筋トレ）の送客先URL。
 # 公開情報（シークレットではない）。リスト未確定時はストアトップにフォールバック。
@@ -68,6 +68,16 @@ GEMINI_MAX_OUTPUT_TOKENS = 24576
 # Thinking Config（thinking_level: minimal/low/medium/high）
 # バイオメカニクスの物理的因果関係の深い推論のため high を指定
 GEMINI_THINKING_LEVEL = "high"
+
+# 解析リクエストのタイムアウト（秒）。SDKデフォルトは無期限のためハング対策として明示
+ANALYZE_TIMEOUT_SEC = 300
+# スクリーニングのタイムアウト（秒）
+SCREEN_TIMEOUT_SEC = 60
+# 503（モデル高負荷）時の自動リトライ：最大試行回数と待機秒
+RETRY_503_MAX_ATTEMPTS = 3
+RETRY_503_WAIT_SEC = 10
+# プログレスバーの目安時間（秒）。この時間で95%に達し、完了まで頭打ち
+ANALYZE_EXPECTED_SEC = 120
 
 # =============================================
 # 動画アップロード設定

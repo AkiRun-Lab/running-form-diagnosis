@@ -27,6 +27,9 @@ from .config import (
     MIN_VIDEO_DURATION_SEC,
     MAX_VIDEO_DURATION_SEC,
     WEAKNESS_CTA_VARIANTS,
+    ANALYZE_TIMEOUT_SEC,
+    RETRY_503_MAX_ATTEMPTS,
+    RETRY_503_WAIT_SEC,
 )
 from .prompts import ANALYZER_SYSTEM_INSTRUCTION, build_analyzer_prompt
 
@@ -128,42 +131,62 @@ def upload_video(client: genai.Client, video_bytes: bytes, filename: str):
     return video_file
 
 
-def analyze_form(client: genai.Client, video_file, context: str) -> str:
+def analyze_form(client: genai.Client, video_file, context: str, progress_state: dict | None = None) -> str:
     """gemini-3.5-flash でランニングフォームを診断する。
 
+    503（モデル高負荷）時は RETRY_503_MAX_ATTEMPTS 回まで自動リトライする。
+    ワーカースレッドから呼ばれるため、この関数内で streamlit（st.*）を呼ばないこと。
+
     Args:
-        client:     初期化済みの genai.Client
-        video_file: upload_video() で取得したファイルオブジェクト
-        context:    ユーザーが入力したコンテキスト（空文字も可）
+        client:         初期化済みの genai.Client
+        video_file:     upload_video() で取得したファイルオブジェクト
+        context:        ユーザーが入力したコンテキスト（空文字も可）
+        progress_state: 呼び出し側と共有する進捗辞書（例: {"attempt": 1}）。
+                        リトライ時に "attempt" を更新する。不要なら None。
 
     Returns:
         マークダウン形式の診断テキスト
 
     Raises:
-        RuntimeError: API エラー（レート制限・その他）
+        RuntimeError: API エラー（レート制限・タイムアウト・503連続失敗・その他）
     """
     user_prompt = build_analyzer_prompt(context)
 
-    try:
-        response = client.models.generate_content(
-            model=GEMINI_ANALYZER_MODEL,
-            contents=[video_file, user_prompt],
-            config=types.GenerateContentConfig(
-                system_instruction=ANALYZER_SYSTEM_INSTRUCTION,
-                max_output_tokens=GEMINI_MAX_OUTPUT_TOKENS,
-                thinking_config=types.ThinkingConfig(
-                    thinking_level=GEMINI_THINKING_LEVEL,
+    response = None
+    for attempt in range(1, RETRY_503_MAX_ATTEMPTS + 1):
+        try:
+            response = client.models.generate_content(
+                model=GEMINI_ANALYZER_MODEL,
+                contents=[video_file, user_prompt],
+                config=types.GenerateContentConfig(
+                    system_instruction=ANALYZER_SYSTEM_INSTRUCTION,
+                    max_output_tokens=GEMINI_MAX_OUTPUT_TOKENS,
+                    thinking_config=types.ThinkingConfig(
+                        thinking_level=GEMINI_THINKING_LEVEL,
+                    ),
+                    http_options=types.HttpOptions(timeout=ANALYZE_TIMEOUT_SEC * 1000),
                 ),
-            ),
-        )
+            )
+            break
 
-    except Exception as e:
-        err = str(e)
-        if "429" in err or "Resource Exhausted" in err:
-            raise RuntimeError("429_RATE_LIMITED: APIのレート制限に達しました。しばらく待ってから再試行してください。")
-        if "503" in err or "Service Unavailable" in err:
-            raise RuntimeError("503_SERVICE_UNAVAILABLE: APIが一時的に利用できません。しばらく待ってから再試行してください。")
-        raise RuntimeError(f"診断中にエラーが発生しました: {err}")
+        except Exception as e:
+            err = str(e)
+            if "429" in err or "Resource Exhausted" in err:
+                raise RuntimeError("429_RATE_LIMITED: APIのレート制限に達しました。しばらく待ってから再試行してください。")
+            if "503" in err or "Service Unavailable" in err:
+                if attempt < RETRY_503_MAX_ATTEMPTS:
+                    if progress_state is not None:
+                        progress_state["attempt"] = attempt + 1
+                    time.sleep(RETRY_503_WAIT_SEC)
+                    continue
+                raise RuntimeError(
+                    "503_SERVICE_UNAVAILABLE: APIが一時的に利用できません。混雑が続いています。しばらく待ってから再試行してください。"
+                )
+            if "timeout" in err.lower() or "timed out" in err.lower() or "deadline" in err.lower():
+                raise RuntimeError(
+                    "TIMEOUT_EXCEEDED: 解析が5分を超えたため中断しました。動画を短くする・圧縮するなどして再試行してください。"
+                )
+            raise RuntimeError(f"診断中にエラーが発生しました: {err}")
 
     # 空レスポンスガード：本文が無いまま返すと、結果非表示のまま診断枠だけ消費される
     text = response.text

@@ -10,6 +10,7 @@ from google.genai import types
 
 from .config import (
     GEMINI_SCREENER_MODEL,
+    SCREEN_TIMEOUT_SEC,
 )
 from .prompts import (
     SCREENER_SYSTEM_INSTRUCTION,
@@ -36,6 +37,7 @@ def screen_video(client: genai.Client, video_file) -> dict:
             config=types.GenerateContentConfig(
                 system_instruction=SCREENER_SYSTEM_INSTRUCTION,
                 max_output_tokens=256,
+                http_options=types.HttpOptions(timeout=SCREEN_TIMEOUT_SEC * 1000),
             ),
         )
 

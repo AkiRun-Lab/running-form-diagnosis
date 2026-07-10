@@ -3,13 +3,24 @@ Running Form Diagnosis - Main App
 ランニング動画をアップロードしてGeminiにフォーム診断させるStreamlitアプリ
 """
 import hmac
+import time
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
 from datetime import timedelta
 
 import streamlit as st
 from google import genai
 from streamlit_cookies_controller import CookieController
 
-from src.config import APP_NAME, APP_VERSION, SUPPORTED_VIDEO_TYPES, MAX_VIDEO_SIZE_MB, MAX_DIAGNOSES_PER_DAY, jst_now
+from src.config import (
+    APP_NAME,
+    APP_VERSION,
+    SUPPORTED_VIDEO_TYPES,
+    MAX_VIDEO_SIZE_MB,
+    MAX_DIAGNOSES_PER_DAY,
+    ANALYZE_EXPECTED_SEC,
+    RETRY_503_MAX_ATTEMPTS,
+    jst_now,
+)
 from src.screener import screen_video
 from src.analyzer import upload_video, analyze_form, cleanup_video, extract_weakness_tag
 from src.ui.components import render_header, render_result, render_gear_cta, render_footer, load_css, render_step_indicator
@@ -175,8 +186,32 @@ if run_btn and uploaded_file:
                 st.stop()
 
         # Step 3: 診断
-        with st.status("フォームを解析中（30秒〜2分かかります）...", expanded=False) as status:
-            result = analyze_form(client, video_file, context)
+        # 別スレッドで実行し、st.status配下で経過時間ベースのプログレスバーを更新する
+        with st.status("フォームを解析中...", expanded=True) as status:
+            prog = st.progress(0.0, text="解析を開始しています...")
+            progress_state = {"attempt": 1}
+            start_time = time.monotonic()
+
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(analyze_form, client, video_file, context, progress_state)
+                while True:
+                    try:
+                        result = future.result(timeout=1)
+                        break
+                    except FuturesTimeout:
+                        elapsed = time.monotonic() - start_time
+                        pct = min(elapsed / ANALYZE_EXPECTED_SEC, 0.95)
+                        minutes, seconds = divmod(int(elapsed), 60)
+                        if progress_state["attempt"] > 1:
+                            label = (
+                                f"APIが混雑しています。自動再試行中"
+                                f"（{progress_state['attempt']}回目/最大{RETRY_503_MAX_ATTEMPTS}回）..."
+                            )
+                        else:
+                            label = f"フォームを解析中... {minutes}分{seconds:02d}秒経過（目安30秒〜2分）"
+                        prog.progress(pct, text=label)
+
+            prog.progress(1.0, text="解析完了")
             status.update(label="診断完了", state="complete")
 
         result_body, weakness = extract_weakness_tag(result)
@@ -196,6 +231,8 @@ if run_btn and uploaded_file:
             st.error("APIのレート制限に達しました。しばらく待ってから再試行してください。")
         elif "503_SERVICE_UNAVAILABLE" in err_msg:
             st.error("APIが一時的に利用できません。しばらく待ってから再試行してください。")
+        elif "TIMEOUT_EXCEEDED" in err_msg:
+            st.error("解析が5分を超えたため中断しました。動画を短くする・圧縮するなどして再試行してください。（診断回数は消費されていません）")
         else:
             st.error(err_msg)
 
