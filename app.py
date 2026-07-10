@@ -194,24 +194,30 @@ if run_btn and uploaded_file:
             progress_state = {"attempt": 1}
             start_time = time.monotonic()
 
-            with ThreadPoolExecutor(max_workers=1) as executor:
-                future = executor.submit(analyze_form, client, video_file, context, progress_state)
-                while True:
-                    try:
-                        result = future.result(timeout=1)
-                        break
-                    except FuturesTimeout:
-                        elapsed = time.monotonic() - start_time
-                        pct = min(elapsed / ANALYZE_EXPECTED_SEC, 0.95)
-                        minutes, seconds = divmod(int(elapsed), 60)
-                        if progress_state["attempt"] > 1:
-                            label = (
-                                f"APIが混雑しています。自動再試行中"
-                                f"（{progress_state['attempt']}回目/最大{RETRY_503_MAX_ATTEMPTS}回）..."
-                            )
-                        else:
-                            label = f"フォームを解析中... {minutes}分{seconds:02d}秒経過（目安30秒〜2分）"
-                        prog.progress(pct, text=label)
+            try:
+                with ThreadPoolExecutor(max_workers=1) as executor:
+                    future = executor.submit(analyze_form, client, video_file, context, progress_state)
+                    while True:
+                        try:
+                            result = future.result(timeout=1)
+                            break
+                        except FuturesTimeout:
+                            elapsed = time.monotonic() - start_time
+                            pct = min(elapsed / ANALYZE_EXPECTED_SEC, 0.95)
+                            minutes, seconds = divmod(int(elapsed), 60)
+                            if progress_state["attempt"] > 1:
+                                label = (
+                                    f"APIが混雑しています。自動再試行中"
+                                    f"（{progress_state['attempt']}回目/最大{RETRY_503_MAX_ATTEMPTS}回）..."
+                                )
+                            else:
+                                label = f"フォームを解析中... {minutes}分{seconds:02d}秒経過（目安30秒〜2分）"
+                            prog.progress(pct, text=label)
+            except Exception:
+                # 失敗時にプログレスバーと「解析中/再試行中」表示を残さない
+                prog.empty()
+                status.update(label="フォーム解析に失敗しました", state="error", expanded=False)
+                raise
 
             prog.progress(1.0, text="解析完了")
             status.update(label="診断完了", state="complete")
