@@ -1,0 +1,56 @@
+/* Running Form Diagnosis (RFD) - Sports Tech HUD Styles */
+
+/* ファイルアップローダー：ドロップゾーン */
+[data-testid="stFileUploaderDropzone"] {
+    background-color: #1E293B;
+    border: 2px dashed rgba(34, 211, 238, 0.45);
+    border-radius: 14px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+[data-testid="stFileUploaderDropzone"]:hover {
+    border-style: solid;
+    border-color: #22D3EE;
+    box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.35);
+}
+
+/* プライマリボタン（診断実行ボタン等）：有効時のみグラデーション適用 */
+.stButton button[kind="primary"]:not(:disabled) {
+    background: linear-gradient(90deg, #22D3EE, #3B82F6);
+    color: #FFFFFF;
+    font-weight: 700;
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 0 16px rgba(34, 211, 238, 0.35);
+    transition: filter 0.15s ease, transform 0.15s ease;
+}
+
+.stButton button[kind="primary"]:not(:disabled):hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+}
+
+/* ダウンロードボタン */
+.stDownloadButton button {
+    background-color: transparent;
+    border: 1px solid #38BDF8;
+    color: #38BDF8;
+    transition: background-color 0.15s ease;
+}
+
+.stDownloadButton button:hover {
+    background-color: rgba(56, 189, 248, 0.12);
+    color: #38BDF8;
+    border-color: #38BDF8;
+}
+
+/* 診断結果内の見出し（h1・CTAカード内は対象外） */
+[data-testid="stMarkdownContainer"] h2 {
+    border-left: 4px solid #22D3EE;
+    padding-left: 12px;
+}
+
+/* テキストエリア */
+.stTextArea textarea {
+    border-radius: 10px;
+}

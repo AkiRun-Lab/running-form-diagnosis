@@ -12,7 +12,7 @@ from streamlit_cookies_controller import CookieController
 from src.config import APP_NAME, APP_VERSION, SUPPORTED_VIDEO_TYPES, MAX_VIDEO_SIZE_MB, MAX_DIAGNOSES_PER_DAY, jst_now
 from src.screener import screen_video
 from src.analyzer import upload_video, analyze_form, cleanup_video, extract_weakness_tag
-from src.ui.components import render_header, render_result, render_gear_cta, render_footer
+from src.ui.components import render_header, render_result, render_gear_cta, render_footer, load_css, render_step_indicator
 
 # =============================================
 # ページ設定（最初に呼ぶ）
@@ -23,6 +23,8 @@ st.set_page_config(
     layout="centered",
     initial_sidebar_state="collapsed",
 )
+
+load_css()
 
 # =============================================
 # Cookie コントローラー
@@ -114,6 +116,7 @@ with st.sidebar:
 # UI
 # =============================================
 render_header()
+render_step_indicator()
 
 uploaded_file = st.file_uploader(
     "動画をアップロード",

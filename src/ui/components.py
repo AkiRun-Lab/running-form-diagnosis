@@ -2,9 +2,18 @@
 Running Form Diagnosis - UI Components
 再利用可能なUIコンポーネント
 """
+from pathlib import Path
+
 import streamlit as st
 
 from ..config import APP_NAME, APP_VERSION, WEAKNESS_CTA_VARIANTS
+
+
+def load_css() -> None:
+    """スポーツテックHUD風スタイルシート（styles.css）を読み込んで注入する"""
+    css_path = Path(__file__).parent / "styles.css"
+    css = css_path.read_text(encoding="utf-8")
+    st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
 
 
 def render_gear_cta(weakness: str = "general") -> None:
@@ -75,9 +84,11 @@ def render_gear_cta(weakness: str = "general") -> None:
 
 
 def render_header() -> None:
-    """アプリヘッダーを表示"""
+    """アプリヘッダーを表示（スポーツテックHUD風ヒーロー）"""
     st.markdown(
-        f'<h1 style="text-align:center; font-size:clamp(1.4rem, 6vw, 2.2rem); white-space:nowrap;">{APP_NAME}</h1>',
+        f'<h1 style="text-align:center; font-size:clamp(1.4rem, 6vw, 2.2rem); white-space:nowrap; '
+        f'background:linear-gradient(90deg, #22D3EE, #3B82F6); -webkit-background-clip:text; '
+        f'-webkit-text-fill-color:transparent; background-clip:text;">{APP_NAME}</h1>',
         unsafe_allow_html=True,
     )
     st.markdown(
@@ -86,8 +97,36 @@ def render_header() -> None:
         unsafe_allow_html=True,
     )
     st.markdown(
-        '<p style="text-align:center; color:#ccc; margin-bottom:1.5rem;">'
+        '<p style="text-align:center; color:#ccc; margin-bottom:1rem;">'
         'ランニング動画をアップロードすると、バイオメカニクスの観点からフォームを診断します。'
+        '</p>',
+        unsafe_allow_html=True,
+    )
+    badges = ["⚡ Powered by Gemini", "🔬 バイオメカニクス解析", "🆓 1日1回無料"]
+    chips_html = "".join(
+        f'<span style="display:inline-block; margin:0 4px 6px; padding:4px 12px; '
+        f'background:rgba(34,211,238,0.10); border:1px solid rgba(34,211,238,0.35); '
+        f'color:#7DD3FC; font-size:0.78rem; border-radius:999px;">{badge}</span>'
+        for badge in badges
+    )
+    st.markdown(
+        f'<div style="text-align:center; margin-bottom:1rem;">{chips_html}</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<div style="height:2px; margin-bottom:1.5rem; '
+        'background:linear-gradient(90deg, transparent, #22D3EE, #3B82F6, transparent);"></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def render_step_indicator() -> None:
+    """利用の流れを1行で示す控えめなステップガイド"""
+    st.markdown(
+        '<p style="text-align:center; color:#94A3B8; font-size:0.85rem; margin-bottom:1.2rem;">'
+        '<span style="color:#38BDF8;">①</span> 動画アップロード '
+        '→ <span style="color:#38BDF8;">②</span> AIチェック '
+        '→ <span style="color:#38BDF8;">③</span> バイオメカニクス解析'
         '</p>',
         unsafe_allow_html=True,
     )
@@ -96,22 +135,33 @@ def render_header() -> None:
 def render_result(result_text: str) -> None:
     """診断結果を表示"""
     st.markdown("---")
-    st.subheader("診断結果")
+    st.markdown(
+        '<div style="display:flex; align-items:center; gap:10px; margin-bottom:0.8rem;">'
+        '<span style="display:inline-block; width:4px; height:1.5rem; border-radius:2px; '
+        'background:linear-gradient(180deg, #22D3EE, #3B82F6);"></span>'
+        '<span style="font-size:1.4rem; font-weight:700; color:#FFFFFF;">診断結果</span>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
     st.markdown(result_text)
 
 
 def render_footer() -> None:
     """フッターを表示"""
-    st.markdown("---")
+    st.markdown(
+        '<div style="height:1px; margin:1.5rem 0 1rem; '
+        'background:linear-gradient(90deg, transparent, #22D3EE, #3B82F6, transparent);"></div>',
+        unsafe_allow_html=True,
+    )
     st.markdown(
         """
 <div style="text-align:center; color:#aaa; font-size:0.85rem;">
     <p>
-        <a href="https://akirun.net/" target="_blank" style="color:#FF4B4B;">AkiRun｜走りを科学でアップデート</a>
+        <a href="https://akirun.net/" target="_blank" style="color:#38BDF8;">AkiRun｜走りを科学でアップデート</a>
         　|
-        <a href="https://akirun.net/lp/marathon-simulator/" target="_blank" style="color:#FF4B4B;">マラソンペース計算ツール（MPC）</a>
+        <a href="https://akirun.net/lp/marathon-simulator/" target="_blank" style="color:#38BDF8;">マラソンペース計算ツール（MPC）</a>
         　|
-        <a href="https://akirun.net/lp/ai-marathon-coach/" target="_blank" style="color:#FF4B4B;">マラソントレーニング・プランナー（MTP）</a>
+        <a href="https://akirun.net/lp/ai-marathon-coach/" target="_blank" style="color:#38BDF8;">マラソントレーニング・プランナー（MTP）</a>
     </p>
     <p style="margin-top:0.5rem;">© 2026 AkiRun</p>
 </div>

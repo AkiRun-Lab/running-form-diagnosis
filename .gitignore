@@ -6,6 +6,8 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 .env
+.venv/
+venv/
 
 # macOS
 .DS_Store
