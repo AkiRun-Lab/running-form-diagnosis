@@ -1,6 +1,9 @@
 # Streamlit secrets（APIキーを含むため絶対にコミットしない）
 .streamlit/secrets.toml
 
+# 再現性テストの出力（run毎に生成される診断結果・統計。リポジトリに含めない）
+tools/repro_results/
+
 # Python
 __pycache__/
 *.py[cod]
