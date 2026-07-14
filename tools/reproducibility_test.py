@@ -162,6 +162,7 @@ def run_one(
         "weakness_tag": None,
         "elapsed_sec": None,
         "error": None,
+        "fallback_used": False,
     }
 
     try:
@@ -170,7 +171,11 @@ def run_one(
         elif variant == "seed":
             text = analyze_form_seed(client, video_file, context, seed)
         else:
-            text = analyze_form(client, video_file, context)
+            # フォールバックモデルに切り替わったrunは別モデルの結果であり、
+            # 再現性の測定対象から区別できるよう記録する
+            progress_state = {}
+            text = analyze_form(client, video_file, context, progress_state=progress_state)
+            record["fallback_used"] = bool(progress_state.get("fallback", False))
 
         # 本番パイプライン（app.py）と同一の順序：SCORES_JSON抽出 → WEAKNESS_TAG抽出
         body, scores = extract_scores_json(text)
@@ -184,7 +189,8 @@ def run_one(
         md_path = outdir / f"{video_name}_run{run_idx}.md"
         md_path.write_text(text, encoding="utf-8")
 
-        print(f"  [run {run_idx}] 完了（{elapsed:.1f}秒） scores={scores} tag={tag}", flush=True)
+        fallback_note = "（フォールバックモデル使用）" if record["fallback_used"] else ""
+        print(f"  [run {run_idx}] 完了（{elapsed:.1f}秒） scores={scores} tag={tag}{fallback_note}", flush=True)
 
     except Exception as e:
         elapsed = time.time() - start
