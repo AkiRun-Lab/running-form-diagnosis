@@ -15,7 +15,7 @@ def jst_now() -> datetime:
 # アプリ情報
 # =============================================
 APP_NAME = "ランニングフォーム診断アプリ"
-APP_VERSION = "1.10.1"
+APP_VERSION = "1.11.0"
 
 # 診断スコアの5項目（キー: Geminiに出力させる英語キー、値: 表示ラベル）
 SCORE_ITEMS = {
@@ -68,6 +68,10 @@ GEMINI_SCREENER_MODEL = "gemini-3.1-flash-lite"
 
 # メイン診断用：深いバイオメカニクス推論
 GEMINI_ANALYZER_MODEL = "gemini-3.5-flash"
+
+# 診断の再現性向上のためseedを固定する（2026-07-14 フェーズ0測定でスコア完全一致を確認）。
+# seedは決定性の「ベストエフォートのヒント」であり完全一致の保証ではない（thinking有効時は特に）
+GEMINI_SEED = 42
 
 # 503フォールバック用の代替診断モデル（Gemini 3系・thinking_level対応を確認済み 2026-07-10）。
 # プライマリがRETRY_503_MAX_ATTEMPTS回連続503のとき、このモデルでFALLBACK_503_MAX_ATTEMPTS回まで試行する。

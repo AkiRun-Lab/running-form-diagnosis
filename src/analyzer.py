@@ -24,6 +24,7 @@ from .config import (
     GEMINI_ANALYZER_FALLBACK_MODEL,
     GEMINI_MAX_OUTPUT_TOKENS,
     GEMINI_THINKING_LEVEL,
+    GEMINI_SEED,
     UPLOAD_POLL_INTERVAL_SEC,
     UPLOAD_TIMEOUT_SEC,
     MIN_VIDEO_DURATION_SEC,
@@ -224,6 +225,7 @@ def analyze_form(client: genai.Client, video_file, context: str, progress_state:
             thinking_level=GEMINI_THINKING_LEVEL,
         ),
         http_options=types.HttpOptions(timeout=ANALYZE_TIMEOUT_SEC * 1000),
+        seed=GEMINI_SEED,
     )
 
     try:
