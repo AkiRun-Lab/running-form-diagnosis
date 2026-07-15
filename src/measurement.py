@@ -42,6 +42,10 @@ _TARGET_LONG_EDGE_PX = 640
 _MIN_DETECTION_RATE = 0.8
 _SIDE_VIEW_RATIO_THRESHOLD = 0.5
 _MIN_CONTACT_EVENTS = 4
+# 接地依存指標（オーバーストライド・接地時間比）の信頼度に必要な接地イベント数。
+# 接地サンプルが少ないと動画デコーダの環境差（macOS/Linuxのffmpeg差）だけで値が
+# 大きく振れることが実測で確認されたため、計測全体の成立条件（4回）より厳しくする
+_CONTACT_MIN_EVENTS_FOR_CONTACT_METRICS = 6
 _SMOOTHING_WINDOW = 3
 _HEAD_TOP_CORRECTION = 1.08
 _CADENCE_MIN_SPM = 120
@@ -795,8 +799,12 @@ def _measure_running_form_impl(video_path: str) -> MeasurementResult:
 
         if overstride_samples and height_px and height_px > 1e-6:
             overstride_value = statistics.median(overstride_samples) / height_px * 100.0
-            overstride_reliable = True
+            # 接地サンプルが少ないと動画デコーダの環境差だけで値が大きく振れる
+            # （実測: 接地4回でmacOS 2.5% vs Cloud 9.6%）ため、6回未満は非表示
+            overstride_reliable = len(overstride_samples) >= _CONTACT_MIN_EVENTS_FOR_CONTACT_METRICS
             overstride_detail = f"初期接地{len(overstride_samples)}回の中央値・身長換算{height_px:.0f}px基準"
+            if not overstride_reliable:
+                overstride_detail += f"（接地{_CONTACT_MIN_EVENTS_FOR_CONTACT_METRICS}回未満のため信頼度低）"
         else:
             overstride_value = None
             overstride_reliable = False
@@ -826,8 +834,8 @@ def _measure_running_form_impl(video_path: str) -> MeasurementResult:
             reasons = []
             if metric_fps < _DUTY_FACTOR_MIN_FPS:
                 reasons.append(f"実効fps={metric_fps:.1f}が{_DUTY_FACTOR_MIN_FPS}未満")
-            if total_contacts < _MIN_CONTACT_EVENTS:
-                reasons.append(f"接地{total_contacts}回が{_MIN_CONTACT_EVENTS}回未満")
+            if total_contacts < _CONTACT_MIN_EVENTS_FOR_CONTACT_METRICS:
+                reasons.append(f"接地{total_contacts}回が{_CONTACT_MIN_EVENTS_FOR_CONTACT_METRICS}回未満")
             if not (_DUTY_FACTOR_MIN_PCT <= duty_value <= _DUTY_FACTOR_MAX_PCT):
                 reasons.append(
                     f"値が{_DUTY_FACTOR_MIN_PCT:.0f}〜{_DUTY_FACTOR_MAX_PCT:.0f}%の範囲外（物理的に不自然）"
