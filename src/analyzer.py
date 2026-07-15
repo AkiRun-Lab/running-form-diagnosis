@@ -193,13 +193,7 @@ def _generate_with_retry(client, model, contents, config, progress_state, max_at
             raise RuntimeError(f"診断中にエラーが発生しました: {err}")
 
 
-def analyze_form(
-    client: genai.Client,
-    video_file,
-    context: str,
-    progress_state: dict | None = None,
-    measurements: dict | None = None,
-) -> str:
+def analyze_form(client: genai.Client, video_file, context: str, progress_state: dict | None = None) -> str:
     """gemini-3.5-flash でランニングフォームを診断する。
 
     503（モデル高負荷）時は RETRY_503_MAX_ATTEMPTS 回まで自動リトライする。
@@ -215,8 +209,6 @@ def analyze_form(
         context:        ユーザーが入力したコンテキスト（空文字も可）
         progress_state: 呼び出し側と共有する進捗辞書（例: {"attempt": 1}）。
                         リトライ時に "attempt" を更新する。フォールバックに入ったら "fallback" を True にする。不要なら None。
-        measurements:   src.measurement.measure_running_form() の結果を dataclasses.asdict()
-                        した辞書（フェーズ2 測定層）。未計測・計測失敗時はNone。
 
     Returns:
         マークダウン形式の診断テキスト
@@ -224,7 +216,7 @@ def analyze_form(
     Raises:
         RuntimeError: API エラー（レート制限・タイムアウト・503連続失敗・その他）
     """
-    user_prompt = build_analyzer_prompt(context, measurements)
+    user_prompt = build_analyzer_prompt(context)
     contents = [video_file, user_prompt]
     config = types.GenerateContentConfig(
         system_instruction=ANALYZER_SYSTEM_INSTRUCTION,
