@@ -9,7 +9,6 @@ src/ や app.py は一切変更せず、既存の analyzer.py の関数をその
     cd apps/running-form-diagnosis
     python3 tools/reproducibility_test.py --video sample.mp4 --runs 5
     python3 tools/reproducibility_test.py --video sample.mp4 --runs 5 --variant seed --seed 42
-    python3 tools/reproducibility_test.py --video sample.mp4 --runs 5 --measure  # 実測値をプロンプトに注入
     python3 tools/reproducibility_test.py --mock --video dummy.mp4   # API不使用（統計ロジックの検証用）
 
 variant:
@@ -18,7 +17,6 @@ variant:
           （フォールバックモデルへの切替は行わない。503時は10秒待ち×3回の簡易リトライのみ）
 """
 import argparse
-import dataclasses
 import json
 import statistics
 import sys
@@ -43,7 +41,6 @@ from src.analyzer import (  # noqa: E402
     extract_scores_json,
     cleanup_video,
 )
-from src.measurement import measure_running_form  # noqa: E402
 from src.config import (  # noqa: E402
     SCORE_ITEMS,
     GEMINI_ANALYZER_MODEL,
@@ -77,16 +74,13 @@ def load_api_key() -> str:
     return api_key
 
 
-def analyze_form_seed(
-    client: genai.Client, video_file, context: str, seed: int,
-    measurements: dict | None = None,
-) -> str:
+def analyze_form_seed(client: genai.Client, video_file, context: str, seed: int) -> str:
     """analyze_form() と同一の GenerateContentConfig に seed だけを追加したローカル実装。
 
     再現性検証のための比較用。本番の analyze_form() とは異なり、
     503時のフォールバックモデル切替は行わない（プライマリモデルのみで簡易リトライ）。
     """
-    user_prompt = build_analyzer_prompt(context, measurements)
+    user_prompt = build_analyzer_prompt(context)
     contents = [video_file, user_prompt]
     config = types.GenerateContentConfig(
         system_instruction=ANALYZER_SYSTEM_INSTRUCTION,
@@ -155,16 +149,8 @@ def build_mock_text(run_idx0: int) -> str:
 def run_one(
     client, video_file, context: str, variant: str, seed: int, run_idx: int,
     video_name: str, outdir: Path, mock: bool,
-    measurements: dict | None = None,
-    measurements_ok: bool = False,
-    injected_metrics: list | None = None,
 ) -> dict:
-    """1回分の診断を実行し、レコード（dict）を返す。失敗してもraiseせずerrorフィールドに記録する。
-
-    measurements/measurements_ok/injected_metrics は --measure 時に動画ごとに1回だけ
-    計測した結果（呼び出し側で使い回す）。measurements_ok・injected_metrics は
-    --measure なし、または --mock 時は常に False / [] になる。
-    """
+    """1回分の診断を実行し、レコード（dict）を返す。失敗してもraiseせずerrorフィールドに記録する。"""
     print(f"  [run {run_idx}] 開始...", flush=True)
     start = time.time()
     record = {
@@ -177,22 +163,18 @@ def run_one(
         "elapsed_sec": None,
         "error": None,
         "fallback_used": False,
-        "measurements_ok": measurements_ok,
-        "injected_metrics": injected_metrics if injected_metrics is not None else [],
     }
 
     try:
         if mock:
             text = build_mock_text(run_idx - 1)
         elif variant == "seed":
-            text = analyze_form_seed(client, video_file, context, seed, measurements)
+            text = analyze_form_seed(client, video_file, context, seed)
         else:
             # フォールバックモデルに切り替わったrunは別モデルの結果であり、
             # 再現性の測定対象から区別できるよう記録する
             progress_state = {}
-            text = analyze_form(
-                client, video_file, context, progress_state=progress_state, measurements=measurements
-            )
+            text = analyze_form(client, video_file, context, progress_state=progress_state)
             record["fallback_used"] = bool(progress_state.get("fallback", False))
 
         # 本番パイプライン（app.py）と同一の順序：SCORES_JSON抽出 → WEAKNESS_TAG抽出
@@ -308,11 +290,6 @@ def main():
     parser.add_argument("--outdir", default=None, help="出力先ディレクトリ（省略時は自動生成）")
     parser.add_argument("--context", default="", help="診断時に渡すコンテキスト文字列（省略可）")
     parser.add_argument("--mock", action="store_true", help="APIを呼ばずダミーテキストで統計ロジックのみ検証する")
-    parser.add_argument(
-        "--measure", action="store_true",
-        help="診断前に src.measurement.measure_running_form() を動画ごとに1回実行し、"
-             "結果をプロンプトに注入する（フェーズ2測定層）。--mock時は測定自体を行わない",
-    )
     args = parser.parse_args()
 
     if args.outdir:
@@ -345,30 +322,6 @@ def main():
         video_name = Path(video_path_str).stem
         print(f"\n=== 動画: {video_name} ===", flush=True)
 
-        # 測定は動画ごとに1回だけ実行し、全runで同じ辞書を使い回す（決定的な処理のため
-        # runごとに再実行しても結果は変わらず、時間の無駄になる）。--mock時は測定自体を
-        # 行わず measurements_ok=False・injected_metrics=[] のまま扱う
-        measurement_dict = None
-        measurements_ok = False
-        injected_metrics: list = []
-        if args.measure and not args.mock:
-            print("  フォーム計測中...", flush=True)
-            t_m0 = time.time()
-            measurement_result = measure_running_form(video_path_str)
-            measurements_ok = measurement_result.ok
-            measurement_dict = dataclasses.asdict(measurement_result)
-            if measurement_result.ok:
-                injected_metrics = [
-                    key for key, m in measurement_result.metrics.items()
-                    if m.get("reliable") and m.get("value") is not None
-                ]
-            print(
-                f"  フォーム計測完了（{time.time() - t_m0:.1f}秒） "
-                f"ok={measurements_ok} injected={injected_metrics}"
-                + ("" if measurements_ok else f" reason={measurement_result.reason}"),
-                flush=True,
-            )
-
         video_file = None
         try:
             if not args.mock:
@@ -382,9 +335,6 @@ def main():
                 record = run_one(
                     client, video_file, args.context, args.variant, args.seed,
                     run_idx, video_name, outdir, args.mock,
-                    measurements=measurement_dict,
-                    measurements_ok=measurements_ok,
-                    injected_metrics=injected_metrics,
                 )
                 all_records.append(record)
                 if run_idx < args.runs:
@@ -404,7 +354,6 @@ def main():
         "seed": args.seed if args.variant == "seed" else None,
         "runs": args.runs,
         "mock": args.mock,
-        "measure": args.measure,
         "records": all_records,
         "stats": summary,
     }

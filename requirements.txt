@@ -2,4 +2,3 @@ streamlit>=1.30.0
 google-genai>=2.7.0
 streamlit-cookies-controller>=0.0.4
 plotly>=5.24.0
-mediapipe>=0.10.35  # 測定層（フェーズ2・src/measurement.py）。姿勢推定でケイデンス等を計測。cv2はmediapipe同梱のopencv-contrib-pythonで提供されるためopencv-python-headlessは追加しない（二重インストール回避）

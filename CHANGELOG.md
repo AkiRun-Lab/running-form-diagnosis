@@ -1,23 +1,5 @@
 # 更新履歴
 
-## v1.12.0 — 2026-07-15
-
-### 追加
-
-- **フォーム実測機能（β）**：MediaPipe姿勢推定（`src/measurement.py`）で、動画からケイデンス・体幹前傾角・上下動比・オーバーストライド指標・接地時間比の5指標を直接計測する測定層を追加。計測結果は診断プロンプトに実測値として注入し（信頼度の低い指標は個別に非表示・非注入）、診断結果画面にも実測値カード（β）として表示（ダウンロードMarkdownにも同表を追加）
-- 測定が不能な動画（側面撮影でない・検出不能・複数人・低フレームレート等）は測定をスキップし、従来どおりの診断に自動フォールバック（機能後退なし）
-- 設計の詳細は `docs/pose-metrics-design.md`（フェーズ2設計・STEP A実測結果を含む）を参照
-
-### 設定変更
-
-- `config.py` に測定層の緊急停止フラグ `MEASUREMENT_ENABLED` を追加（Falseにすると計測ステップをスキップしv1.11.0相当の診断フローに戻る）
-- `requirements.txt` に `mediapipe>=0.10.35` を追加（cv2はmediapipe同梱のopencv-contrib-pythonで提供されるため`opencv-python-headless`は追加しない）
-- Streamlit Cloud（Linux）でのopencv-contrib実行時依存として `packages.txt` を新設（`libgl1`・`libglib2.0-0`）
-
-### 開発ツール
-
-- `tools/reproducibility_test.py` に `--measure` フラグを追加。指定時は動画ごとに1回だけ`measure_running_form()`を実行し、結果を全runの診断プロンプトに注入する。measurements_ok・injected_metrics（信頼度の高い注入済み指標キー一覧）を`summary.json`の各レコードに記録
-
 ## v1.11.0 — 2026-07-14
 
 ### 改善
