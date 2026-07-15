@@ -5,7 +5,7 @@
 | 項目 | 内容 |
 |------|------|
 | アプリ名 | ランニングフォーム診断 |
-| バージョン | 1.3.2 |
+| バージョン | 1.12.0 |
 | フレームワーク | Streamlit |
 | ホスティング | Streamlit Community Cloud |
 | 本番URL | https://running-form-diagnosis.streamlit.app/ |
@@ -20,6 +20,11 @@
 ユーザー（ブラウザ）
   ↓ 動画アップロード
 Streamlit app.py
+  ↓
+[0] ローカル姿勢推定（測定層・src/measurement.py・MEASUREMENT_ENABLED時のみ）
+    ・一時ファイル化した動画をMediaPipe PoseLandmarkerで解析（Gemini非依存・ローカル実行）
+    ・ケイデンス・体幹前傾角・上下動比・オーバーストライド指標・接地時間比を計測
+    ・失敗（側面撮影でない・検出不能等）時は例外を投げず ok=False を返し、以降は測定なしで続行
   ↓
 [1] Gemini Files API
     動画をアップロード → ACTIVE 状態になるまでポーリング
@@ -36,11 +41,12 @@ Streamlit app.py
 [4] gemini-3.5-flash（フォーム診断）
     ・thinking_level=high で深層推論
     ・接地・骨盤・腕振り・上下動・疲労による代償動作を分析
+    ・[0]の実測値が得られていればプロンプトに注入し、診断根拠として使用
     → マークダウン形式の診断レポートを返す
   ↓
 [5] Gemini Files API からファイルを削除（cleanup）
   ↓
-Streamlit 診断結果表示 + Markdown ダウンロードボタン
+Streamlit 診断結果表示（実測値カード（β）含む）+ Markdown ダウンロードボタン
 ```
 
 ---
@@ -59,8 +65,9 @@ Streamlit 診断結果表示 + Markdown ダウンロードボタン
 
 | パラメータ | 値 | 理由 |
 |-----------|-----|------|
-| max_output_tokens | 16384 | 詳細な診断レポートに対応 |
+| max_output_tokens | 24576 | 詳細な診断レポートに対応（thinkingトークンも消費するため、本文の必要量にthinking_level=highの余裕を上乗せ） |
 | thinking_level | high | 接地・骨盤・腕振りの物理的因果関係の深い推論のために最大段階を指定 |
+| seed | 42 | 診断再現性向上のための固定シード（ベストエフォート。詳細は`docs/reproducibility-phase0.md`） |
 
 ※ `temperature` / `top_p` / `top_k` は Gemini 3.5 Flash のデフォルト設定に最適化済みのため非推奨（指定しない）
 
@@ -72,21 +79,30 @@ Streamlit 診断結果表示 + Markdown ダウンロードボタン
 running-form-diagnosis/
 ├── app.py                      # メインUIエントリポイント
 ├── requirements.txt            # 依存パッケージ
+├── packages.txt                # Streamlit Cloud aptパッケージ（opencv-contrib実行時依存）
 ├── .gitignore
 ├── .streamlit/
-│   ├── config.toml             # テーマ設定（ダークテーマ・赤系）
+│   ├── config.toml             # テーマ設定（ダークテーマ・シアン系）
 │   ├── secrets.toml            # APIキー（gitignore済み・本番はStreamlit Secrets）
 │   └── secrets.toml.example   # テンプレート
+├── models/
+│   └── pose_landmarker_lite.task  # MediaPipe Poseモデル（測定層・リポジトリ同梱）
 ├── src/
 │   ├── config.py               # モデル名・APIパラメータ定数
 │   ├── screener.py             # gemini-3.1-flash-lite によるスクリーニング
 │   ├── analyzer.py             # アップロード・診断（gemini-3.5-flash）・クリーンアップ
-│   ├── prompts.py              # システムインストラクション・プロンプトテンプレート
+│   ├── measurement.py          # MediaPipe姿勢推定による測定層（フェーズ2・Gemini非依存）
+│   ├── prompts.py              # システムインストラクション・プロンプトテンプレート（実測値注入含む）
 │   └── ui/
-│       └── components.py       # render_header / render_result / render_footer
+│       └── components.py       # render_header / render_result / render_measurements / render_footer
+├── tools/
+│   ├── reproducibility_test.py # 診断再現性測定CLI（--measureで測定層を統合検証可）
+│   └── measure_video.py        # 測定層単体の検証スクリプト
 └── docs/
     ├── user-manual.md          # ユーザーマニュアル
-    └── specification.md        # 本ファイル
+    ├── specification.md        # 本ファイル
+    ├── pose-metrics-design.md  # フェーズ2（測定層）設計文書
+    └── reproducibility-phase0.md  # 診断再現性フェーズ0測定レポート
 ```
 
 ---
@@ -95,8 +111,16 @@ running-form-diagnosis/
 
 ```
 streamlit>=1.30.0
-google-genai>=1.0.0
+google-genai>=2.7.0
+streamlit-cookies-controller>=0.0.4
+plotly>=5.24.0
+mediapipe>=0.10.35
 ```
+
+MediaPipeの依存でopencv-contrib-pythonが導入され、cv2はこれで提供される
+（`opencv-python-headless` は二重インストール回避のため追加しない）。
+Streamlit Cloud（Linux）ではopencv-contribの実行時依存として `packages.txt`
+（`libgl1`・`libglib2.0-0`）が必要。
 
 ---
 
@@ -155,7 +179,7 @@ google-genai>=1.0.0
 | 項目 | 値 |
 |------|-----|
 | ベーステーマ | dark |
-| プライマリカラー | #FF4B4B（AkiRun赤） |
+| プライマリカラー | #22D3EE（シアン） |
 | 背景色 | #0F172A |
 | サブ背景色 | #1E293B |
 | テキスト色 | #FFFFFF |
