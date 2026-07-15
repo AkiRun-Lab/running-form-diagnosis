@@ -1,5 +1,14 @@
 # 更新履歴
 
+## v1.12.1 — 2026-07-15
+
+### 変更
+
+- 弱点連動CTAの送客先を、全カテゴリ共通のリスト⑦からカテゴリ別Amazonアイデアリストに差し替え（glute_core＝臀筋・体幹／mobility＝可動域ケア・ストレッチ／elasticity＝接地バネ・プライオ／upper_body＝腕振り・上半身補強）。generalは網羅型のリスト⑦を継続。トラッキングIDは akirun-rfd-22 に統一
+- `config.py` に `AMAZON_LIST_GLUTE_CORE`・`AMAZON_LIST_MOBILITY`・`AMAZON_LIST_ELASTICITY`・`AMAZON_LIST_UPPER_BODY` を追加
+
+---
+
 ## v1.12.0 — 2026-07-15
 
 ### 追加
