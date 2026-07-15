@@ -262,10 +262,10 @@ def render_measurements(measurements: dict | None) -> None:
 <div style="display:flex; align-items:center; gap:10px; margin:1.4rem 0 0.6rem;">
     <span style="display:inline-block; width:4px; height:1.3rem; border-radius:2px;
     background:linear-gradient(180deg, #22D3EE, #3B82F6);"></span>
-    <span style="font-size:1.1rem; font-weight:700; color:#FFFFFF;">📐 実測値（β）</span>
+    <span style="font-size:1.1rem; font-weight:700; color:#FFFFFF;">📐 フォーム計測結果（β）</span>
 </div>
 <p style="color:#94A3B8; font-size:0.82rem; margin:0 0 0.6rem;">
-    MediaPipe姿勢推定による動画からの直接計測値です。
+    あなたの動画からケイデンス（ピッチ）・体幹の前傾・上下動を自動計測した数値です。
 </p>
 <div>{rows_html}</div>
 <p style="color:#64748B; font-size:0.75rem; margin-top:0.6rem;">
