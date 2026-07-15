@@ -3,8 +3,11 @@ Running Form Diagnosis - Main App
 ランニング動画をアップロードしてGeminiにフォーム診断させるStreamlitアプリ
 """
 import hmac
+import os
+import tempfile
 import time
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
+from dataclasses import asdict
 from datetime import timedelta
 
 import streamlit as st
@@ -17,6 +20,7 @@ from src.config import (
     SUPPORTED_VIDEO_TYPES,
     MAX_VIDEO_SIZE_MB,
     MAX_DIAGNOSES_PER_DAY,
+    MEASUREMENT_ENABLED,
     ANALYZE_EXPECTED_SEC,
     RETRY_503_MAX_ATTEMPTS,
     SCORE_ITEMS,
@@ -24,7 +28,16 @@ from src.config import (
 )
 from src.screener import screen_video
 from src.analyzer import upload_video, analyze_form, cleanup_video, extract_weakness_tag, extract_scores_json
-from src.ui.components import render_header, render_result, render_gear_cta, render_footer, load_css, render_step_indicator
+from src.ui.components import (
+    render_header,
+    render_result,
+    render_measurements,
+    get_measurement_display,
+    render_gear_cta,
+    render_footer,
+    load_css,
+    render_step_indicator,
+)
 
 # =============================================
 # ページ設定（最初に呼ぶ）
@@ -67,6 +80,7 @@ defaults = {
     "last_weakness": "general",
     "last_scores": None,
     "last_used_fallback": False,
+    "last_measurements": None,
 }
 for k, v in defaults.items():
     if k not in st.session_state:
@@ -172,6 +186,51 @@ if run_btn and uploaded_file:
     video_bytes = uploaded_file.read()
     video_file = None
 
+    # フォーム計測（測定層・src/measurement.py・Gemini非依存のローカル処理）
+    # 失敗（mediapipe未導入・検出不能等）はすべて握りつぶし、診断は必ず続行する。
+    # session_state への保存は診断成功時にまとめて行う（診断が失敗した場合に
+    # 古い診断結果と新しい計測値が食い違って表示されるのを避けるため）。
+    measurements_dict = None
+    if MEASUREMENT_ENABLED:
+        with st.status("フォーム計測中...", expanded=False) as m_status:
+            tmp_path = None
+            try:
+                suffix = os.path.splitext(uploaded_file.name)[1] or ".mp4"
+                with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
+                    tmp.write(video_bytes)
+                    tmp_path = tmp.name
+
+                # mediapipe未導入環境（Cloud等）ではImportErrorになりうるため遅延import
+                from src.measurement import measure_running_form
+
+                measurement_result = measure_running_form(tmp_path)
+                measurements_dict = asdict(measurement_result)
+
+                if measurement_result.ok:
+                    m_status.update(
+                        label=(
+                            "計測完了（解析区間 "
+                            f"{measurement_result.window_start_sec:.1f}〜"
+                            f"{measurement_result.window_end_sec:.1f}秒）"
+                        ),
+                        state="complete",
+                    )
+                else:
+                    m_status.update(
+                        label=f"計測をスキップしました（{measurement_result.reason or '検出できませんでした'}）",
+                        state="complete",
+                    )
+            except ImportError:
+                m_status.update(label="計測をスキップしました（計測モジュール未導入）", state="complete")
+            except Exception:
+                m_status.update(label="計測をスキップしました（計測処理でエラーが発生しました）", state="complete")
+            finally:
+                if tmp_path:
+                    try:
+                        os.remove(tmp_path)
+                    except OSError:
+                        pass
+
     try:
         # Step 1: アップロード
         with st.status("動画をアップロード中...", expanded=True) as status:
@@ -197,7 +256,9 @@ if run_btn and uploaded_file:
 
             try:
                 with ThreadPoolExecutor(max_workers=1) as executor:
-                    future = executor.submit(analyze_form, client, video_file, context, progress_state)
+                    future = executor.submit(
+                        analyze_form, client, video_file, context, progress_state, measurements_dict
+                    )
                     while True:
                         try:
                             result = future.result(timeout=1)
@@ -233,6 +294,7 @@ if run_btn and uploaded_file:
         st.session_state.last_scores = scores
         st.session_state.last_context = context.strip()
         st.session_state.last_used_fallback = bool(progress_state.get("fallback"))
+        st.session_state.last_measurements = measurements_dict
         st.session_state.diagnosis_count += 1
         st.session_state.cookie_write_pending = True
         _should_rerun = True
@@ -262,6 +324,7 @@ if _should_rerun:
 # 診断結果の表示（rerun後の描画サイクルで実行）
 if st.session_state.get("last_result"):
     render_result(st.session_state.last_result, st.session_state.last_scores)
+    render_measurements(st.session_state.get("last_measurements"))
     if st.session_state.get("last_used_fallback"):
         st.caption("※ APIの混雑のため、代替モデル（Gemini 3 Flash）で診断しました。")
     render_gear_cta(st.session_state.last_weakness)
@@ -290,10 +353,24 @@ if st.session_state.get("last_result"):
             f"| **総合スコア** | **{_overall:.1f}** |\n\n---\n"
         )
 
+    _measure_display = get_measurement_display(st.session_state.get("last_measurements"))
+    measurements_section = ""
+    if _measure_display:
+        _measure_rows = "\n".join(f"| {label} | {value} |" for label, value in _measure_display["rows"])
+        measurements_section = (
+            f"\n## 実測値（β）\n\n"
+            f"| 指標 | 値 |\n"
+            f"|---|---|\n"
+            f"{_measure_rows}\n\n"
+            f"解析区間：{_measure_display['window_start_sec']:.1f}〜{_measure_display['window_end_sec']:.1f}秒　"
+            f"撮影方向：{_measure_display['view_label']}\n\n---\n"
+        )
+
     md_content = (
         f"# ランニングフォーム診断レポート\n\n"
         f"診断日：{today}{fallback_line}{context_line}\n\n---\n"
         f"{scores_section}\n"
+        f"{measurements_section}\n"
         f"{st.session_state.last_result}"
     )
     st.download_button(

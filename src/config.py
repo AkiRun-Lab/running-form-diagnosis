@@ -17,6 +17,10 @@ def jst_now() -> datetime:
 APP_NAME = "ランニングフォーム診断アプリ"
 APP_VERSION = "1.11.0"
 
+# 測定層（MediaPipe姿勢推定）の緊急停止フラグ。Cloud等でmediapipeが動かない場合にFalseにする。
+# Falseにすると計測ステップ自体をスキップし、v1.11.0相当の診断フローに戻る
+MEASUREMENT_ENABLED = True
+
 # 診断スコアの5項目（キー: Geminiに出力させる英語キー、値: 表示ラベル）
 SCORE_ITEMS = {
     "foot_strike": "接地",

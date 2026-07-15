@@ -49,13 +49,14 @@ ANALYZER_SYSTEM_INSTRUCTION = """
 - 精神論・感覚的アドバイスは排除し、物理法則に基づいた客観的フィードバックのみ提供
 - 日本語で出力する
 - 診断の根拠にできるのは「動画から直接観察できる事実」と「ユーザーが提供したコンテキスト」のみ。外部の計測データ（加速度計・パワーメーター・センサー・実験データ等）への言及や引用は、ユーザーが提供していない限り禁止
+- ただし、ユーザープロンプト内に【アプリ計測の実測値】として提供される数値は本アプリ自身の計測値であり、禁止対象ではなく、診断の根拠として優先的に使用する
 - 出力を確定する前に、セクション1（良い点）とセクション2（改善すべき点）が同じ動作要素を正反対に評価していないか確認し、矛盾があれば解消してから出力する
 """
 
 _ANALYZER_BASE_PROMPT = """
 添付の動画のランニングフォームを診断してください。
 
-{context_section}
+{context_section}{measurement_section}
 
 以下の構成でマークダウン形式で出力してください：
 
@@ -109,16 +110,81 @@ _CONTEXT_WITH_INPUT = """練習・レースのコンテキスト：
 
 _CONTEXT_WITHOUT_INPUT = ""
 
+# =============================================
+# 測定層（フェーズ2・src/measurement.py）の実測値注入
+# =============================================
 
-def build_analyzer_prompt(context: str) -> str:
-    """ユーザーコンテキストの有無に応じてプロンプトを構築する
+# metrics辞書のキー → (表示ラベル, 値のフォーマット関数)
+# 順序はプロンプト内の表示順（ケイデンス→体幹前傾角→上下動比→オーバーストライド→接地時間比）
+_MEASUREMENT_LABELS = {
+    "cadence": ("ケイデンス", lambda v: f"{v:.0f} 歩/分"),
+    "trunk_lean": ("体幹前傾角", lambda v: f"{v:.1f}°"),
+    "vertical_osc_ratio": ("上下動比（対身長）", lambda v: f"{v:.1f}%"),
+    "overstride": ("オーバーストライド指標（対身長）", lambda v: f"{v:.1f}%"),
+    "duty_factor": ("接地時間比", lambda v: f"{v:.0f}%"),
+}
+_MEASUREMENT_ORDER = ["cadence", "trunk_lean", "vertical_osc_ratio", "overstride", "duty_factor"]
+
+
+def _build_measurement_section(measurements: dict | None) -> str:
+    """measure_running_form() の結果辞書からプロンプト注入用テキストを作る。
+
+    ok=True かつ reliable=True の指標が1つ以上あるときだけ非空文字列を返す
+    （それ以外は空文字列 = プロンプトはmeasurements=Noneの場合と完全同一になる）。
+    """
+    if not measurements or not measurements.get("ok"):
+        return ""
+
+    metrics = measurements.get("metrics") or {}
+    lines = []
+    for key in _MEASUREMENT_ORDER:
+        m = metrics.get(key)
+        if not m or not m.get("reliable") or m.get("value") is None:
+            continue
+        label, fmt = _MEASUREMENT_LABELS[key]
+        lines.append(f"- {label}: {fmt(m['value'])}")
+
+    if not lines:
+        return ""
+
+    view = measurements.get("view", "unknown")
+    if view == "front_or_back":
+        view_note = "前後方向（一部指標のみ計測）"
+    elif view in ("side_left", "side_right"):
+        view_note = "側面"
+    else:
+        view_note = "不明"
+    window_start = measurements.get("window_start_sec") or 0.0
+    window_end = measurements.get("window_end_sec") or 0.0
+
+    metrics_block = "\n".join(lines)
+    return (
+        "\n【アプリ計測の実測値】\n"
+        "本アプリがMediaPipe姿勢推定で動画から直接計測した客観値です。診断とスコアは必ずこの計測値と"
+        "整合させてください（計測値と矛盾する目視推定をしない）：\n"
+        f"{metrics_block}\n"
+        f"（解析区間: {window_start:.1f}〜{window_end:.1f}秒・撮影方向: {view_note}）\n"
+    )
+
+
+def build_analyzer_prompt(context: str, measurements: dict | None = None) -> str:
+    """ユーザーコンテキスト・実測値の有無に応じてプロンプトを構築する
 
     テンプレート本文にJSON例などの波括弧を含むため str.format() は使わない
     （ユーザー入力に {} が含まれる場合の事故も防ぐ）。
+
+    Args:
+        context:      ユーザーが入力したコンテキスト（空文字も可）
+        measurements: src.measurement.measure_running_form() の結果を
+                      dataclasses.asdict() した辞書。未計測・計測失敗時はNone。
     """
     if context and context.strip():
         context_section = _CONTEXT_WITH_INPUT.replace("{context}", context.strip())
     else:
         context_section = _CONTEXT_WITHOUT_INPUT
 
-    return _ANALYZER_BASE_PROMPT.replace("{context_section}", context_section)
+    measurement_section = _build_measurement_section(measurements)
+
+    prompt = _ANALYZER_BASE_PROMPT.replace("{context_section}", context_section)
+    prompt = prompt.replace("{measurement_section}", measurement_section)
+    return prompt
