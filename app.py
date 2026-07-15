@@ -151,6 +151,10 @@ uploaded_file = st.file_uploader(
     type=SUPPORTED_VIDEO_TYPES,
     help=f"対応形式: {', '.join(SUPPORTED_VIDEO_TYPES).upper()}　最大 {MAX_VIDEO_SIZE_MB}MB",
 )
+st.caption(
+    "📷 実測値（β）を得る撮影のコツ：真横から・ランナー1人・全身が映る・5秒以上・通常速度で撮影してください。"
+    "条件を満たさない動画（レース動画・スロー撮影など）も、実測値なしで診断できます。"
+)
 
 if uploaded_file:
     st.video(uploaded_file)
