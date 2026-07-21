@@ -33,12 +33,12 @@ Streamlit app.py
     ・video_metadata.video_duration で 5秒以上5分以下か確認
     → 範囲外の場合はファイルを削除してエラーを返す
   ↓
-[3] gemini-3.1-flash-lite（スクリーニング）
+[3] gemini-3.5-flash-lite（スクリーニング）
     ・全身が映っているか
     ・ランナー（人物）が映っているか
     → {"ok": bool, "reason": str} を返す
   ↓ ok=True の場合のみ
-[4] gemini-3.5-flash（フォーム診断）
+[4] gemini-3.6-flash（フォーム診断）
     ・thinking_level=high で深層推論
     ・接地・骨盤・腕振り・上下動・疲労による代償動作を分析
     ・[0]の実測値が得られていればプロンプトに注入し、診断根拠として使用
@@ -53,7 +53,7 @@ Streamlit 診断結果表示（実測値カード（β）含む）+ Markdown ダ
 
 ## Gemini API パラメータ
 
-### スクリーニング（gemini-3.1-flash-lite）
+### スクリーニング（gemini-3.5-flash-lite）
 
 | パラメータ | 値 | 理由 |
 |-----------|-----|------|
@@ -61,7 +61,7 @@ Streamlit 診断結果表示（実測値カード（β）含む）+ Markdown ダ
 
 ※ `temperature` / `top_p` / `top_k` は全 Gemini 3.x モデルで非推奨のため指定しない。
 
-### 診断（gemini-3.5-flash）
+### 診断（gemini-3.6-flash）
 
 | パラメータ | 値 | 理由 |
 |-----------|-----|------|
@@ -69,7 +69,7 @@ Streamlit 診断結果表示（実測値カード（β）含む）+ Markdown ダ
 | thinking_level | high | 接地・骨盤・腕振りの物理的因果関係の深い推論のために最大段階を指定 |
 | seed | 42 | 診断再現性向上のための固定シード（ベストエフォート。詳細は`docs/reproducibility-phase0.md`） |
 
-※ `temperature` / `top_p` / `top_k` は Gemini 3.5 Flash のデフォルト設定に最適化済みのため非推奨（指定しない）
+※ `temperature` / `top_p` / `top_k` は Gemini 3.6 Flash のデフォルト設定に最適化済みのため非推奨（指定しない）
 
 ---
 
@@ -89,8 +89,8 @@ running-form-diagnosis/
 │   └── pose_landmarker_lite.task  # MediaPipe Poseモデル（測定層・リポジトリ同梱）
 ├── src/
 │   ├── config.py               # モデル名・APIパラメータ定数
-│   ├── screener.py             # gemini-3.1-flash-lite によるスクリーニング
-│   ├── analyzer.py             # アップロード・診断（gemini-3.5-flash）・クリーンアップ
+│   ├── screener.py             # gemini-3.5-flash-lite によるスクリーニング
+│   ├── analyzer.py             # アップロード・診断（gemini-3.6-flash）・クリーンアップ
 │   ├── measurement.py          # MediaPipe姿勢推定による測定層（フェーズ2・Gemini非依存）
 │   ├── prompts.py              # システムインストラクション・プロンプトテンプレート（実測値注入含む）
 │   └── ui/

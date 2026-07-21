@@ -4,7 +4,7 @@ Running Form Diagnosis - Prompts
 """
 
 # =============================================
-# スクリーニング（gemini-3.1-flash）
+# スクリーニング（gemini-3.5-flash-lite）
 # =============================================
 
 SCREENER_SYSTEM_INSTRUCTION = """
@@ -29,7 +29,7 @@ SCREENER_USER_PROMPT = """
 """
 
 # =============================================
-# フォーム診断（gemini-3.5-flash）
+# フォーム診断（gemini-3.6-flash）
 # =============================================
 
 ANALYZER_SYSTEM_INSTRUCTION = """

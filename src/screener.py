@@ -1,6 +1,6 @@
 """
 Running Form Diagnosis - Screener
-gemini-3.1-flash で動画の品質チェックを行う。
+gemini-3.5-flash-lite で動画の品質チェックを行う。
 アップロード済みの Files API ファイルオブジェクトを受け取り、診断可否を返す。
 """
 import json

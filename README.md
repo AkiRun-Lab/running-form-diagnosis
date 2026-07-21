@@ -11,8 +11,8 @@
 ## 機能
 
 - 動画アップロード（MP4 / MOV / AVI / WEBM、最大200MB）
-- gemini-3.1-flash-lite による動画スクリーニング（画角・人物の確認）
-- gemini-3.5-flash + Thinking Mode による深層フォーム診断
+- gemini-3.5-flash-lite による動画スクリーニング（画角・人物の確認）
+- gemini-3.6-flash + Thinking Mode による深層フォーム診断
 - 練習内容・気になる点のコンテキスト入力
 - 診断結果のMarkdownファイルダウンロード
 
